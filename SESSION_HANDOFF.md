@@ -138,15 +138,15 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 04
 
-SOHBET-04 | Rubonnek Quest Manager — hazır. Rapor 03 ve Actions 44165154825 bağımsız olarak doğrulandı.
-
-**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; dal veya PR açma. Başlangıçta HEAD, AGENTS.md, README.md, bu rapor ve mevcut `tamu-topdown-bootstrap` görevini doğrula. `Rubonnek/quest-manager` kaynak dalı `master`, sabit commit `8fe88bc8a415d0b57e32a11b6114518e6d62ff6d`; MIT lisansı `addons/rubonnek.quest_manager/LICENSE.md`. Bu ref ve yolu doğrudan kullan. Gereken çekirdeği ve lisansı al; demo içeriği veya ayrı diyalog/HUD sistemi ekleme.
-
-**Hedef:** Tek odada alınabilen, ilerleyen ve ödülü alınabilen bir görev oluştur. Sabit TAMU görev/hedef ve eşya kimlikleri kullan. Yalnız gerçekten envantere eklenen toplama miktarı hedefi ilerletsin; başarısız toplama ve sandık aktarımları sayılmasın. Görev ilerlemesi ve ödülün verildiği bilgisi aynı sürümlü `state.json` içinde saklansın. Önceki geçerli kayıtlar yüklenebilsin; yeni alanların doğrulaması canlı durum değiştirilmeden bitsin. Dolu çantada verilemeyen ödül alınmış sayılmasın ve kısmen verilmesin.
-
-**Yazma kapsamı:** Quest Manager çekirdek dosyaları/lisansı, göreve özgü veri ve adaptör, gerekli entegrasyon noktaları (`scripts/save_adapter.gd`, `scripts/inventory_bridge.gd`, `scripts/prototype.gd`, `scenes/prototype.tscn`, gerekirse `project.godot`), ilgili testler ve mevcut Godot Actions workflow’u. Savaş veya sonraki entegrasyonlara dokunma.
-
-**Kabul ve teslim:** Önceki sekiz testi koru. GitHub Actions’ta en az yarım görevin kaydet/yükle sonrası sürmesi, başarısız toplamanın sayılmaması ve verilmiş ödülün yüklemeden sonra ikinci kez verilememesi testlerini çalıştır. Başarısız CI varsa logdan düzelt ve yeniden doğrula. Kod commit’ini ve ilgili başarılı Actions sonucunu geri oku. Teslimi yalnız `SESSION_HANDOFF.md#rapor-04` bölümüne yaz ve geri oku; Android doğrulamasını ayrı tut, mükerrer Avenox görevi açma.
+- **Durum:** `verified` — Rubonnek Quest Manager çekirdeği sürümlü kayıtla bağlandı. Kod commit’i, başarılı Actions job’u ve ham günlükler geri okunarak doğrulandı; önceki sekiz test korunarak GdUnit4 **13/13** geçti. Android cihaz/APK doğrulaması yapılmadı; SOHBET-05 açılabilir.
+- **Olay:** `tamu-topdown-sohbet04-ci-44169867834` · UTC `2026-11-17T20:30:02Z` (başarılı CI tamamlanma zamanı).
+- **Başlangıç HEAD:** `1aa6566961a55be8ae04ba286c63c21e86432997`. **Test edilen kod:** [`55108657f71b799e6d409da7a37452eb1483e06a`](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/commit/55108657f71b799e6d409da7a37452eb1483e06a).
+- **Upstream:** `Rubonnek/quest-manager` dalı `master`, sabit commit [`8fe88bc8a415d0b57e32a11b6114518e6d62ff6d`](https://github.com/Rubonnek/quest-manager/tree/8fe88bc8a415d0b57e32a11b6114518e6d62ff6d); MIT lisansı `addons/rubonnek.quest_manager/LICENSE.md`. Yalnız runtime `QuestManager`/`QuestEntry` çekirdeği ve lisans alındı; demo, debugger ve ayrı diyalog/HUD sistemi taşınmadı.
+- **Görev sözleşmesi:** `quest:prototype:gather_wood` / `objective:prototype:gather_wood` / `core:wood_log` sabit kimlikleri kullanılıyor. İlerleme yalnız çantaya gerçekten eklenen toplama miktarıyla artıyor; başarısız toplama ve sandık aktarımı ilerleme üretmiyor. Hedef tamamlanınca ödül yalnız tamamı sığıyorsa atomik veriliyor; dolu çantada kısmi ödül ve `reward_claimed` işaretlemesi yok.
+- **Kayıt bağlantısı:** Görev ilerlemesi, tamamlanma ve ödül-alındı durumu mevcut sürümlü `state.json` zarfının `quests` alanında tutuluyor. Yeni quest alanları envanter/dünya durumuyla birlikte canlı duruma uygulanmadan önce doğrulanıyor. Önceki geçerli kayıtlar `quests` ve ikinci pickup alanı yoksa varsayılan görev durumuyla yüklenebiliyor.
+- **Yollar:** `addons/rubonnek.quest_manager/runtime/{quest_entry.gd,quest_manager.gd}`, `addons/rubonnek.quest_manager/LICENSE.md`, `data/quests/gather_wood.json`, `scripts/{quest_bridge.gd,inventory_bridge.gd,save_adapter.gd,prototype.gd}`, `scenes/prototype.tscn`, `tests/prototype_test.gd`, `.github/workflows/godot-tests.yml`. Yeni dal/PR yok; savaş veya sonraki entegrasyonlar açılmadı.
+- **GitHub Actions:** [run 44169867834](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/actions/runs/44169867834), job `134345798502`, `success`. Motor `4.7.2.stable.official.ed1daf0bf`; headless import/startup geçti. GdUnit4: **13 test, 0 hata, 0 başarısız, 0 skipped**. Önceki sekiz testin tamamı geçti; ayrıca yarım görev kaydet/yükle sonrası devam, başarısız toplamanın sayılmaması, ödülün yüklemeden sonra ikinci kez verilmemesi, dolu çantada atomik ödül ve eski kayıt uyumluluğu geçti.
+- **Rapor:** [SESSION_HANDOFF.md · Rapor 04](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/blob/main/SESSION_HANDOFF.md#rapor-04). Android cihaz ve APK doğrulaması bu çalışmada yapılmadı.
 
 ### Rapor 05
 
