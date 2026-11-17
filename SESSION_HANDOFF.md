@@ -184,7 +184,13 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 08
 
-SOHBET-08 | Interaction Feedback — önceki kabulü bekliyor.
+SOHBET-08 | Interaction Feedback — hazır. Koordinatör Rapor 07’yi doğruladı: Actions 44175826940, `58ea467`, 26/26; sonrası yalnız rapor.
+
+**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; dal/PR yok. HEAD, AGENTS.md, README.md, bu rapor ve mevcut `tamu-topdown-bootstrap` görevini doğrula. Kaynak `paufau/godot-interaction-feedback` v1.1.1, sabit commit `29a920f149ee93515e6c49c342f2f9002906b65c`, kökte MIT `LICENSE`. `addons/interaction_feedback/` altından yalnız gereken çekirdek ve görsel efektleri lisansla al; demo, haptik ve sürekli animasyon ekleme.
+
+**Hedef ve sınır:** Seçilen hedefte görünür seçim vurgusu ve kısa tek seferlik dokunma geri bildirimi. Vurgu menzil durumunu ayırt etsin. Tek seçim kaynağı mevcut prototype; efekt sadece onu okur. Görsel ölçek/renk çarpışma, hitbox, dokunma alanı veya menzili değiştirmesin; hover zorunlu olmasın. Boşa dokununca ve hedef değişince eski vurgu temizlensin. Yalnız gerekli addon, görsel adaptör, prototype sahne/script bağlantıları, test ve mevcut CI kapsamı. HUD, envanter, kayıt, görev, savaş ve survival mantığını değiştirme.
+
+**Kabul:** Önceki 26 testi koru. GitHub Actions’ta sentetik dokunmayla tam hedefi vurgulamayı, hedef değişimi/boş alan temizliğini ve menzil dışı geri bildirimin etkileşimi açmadığını doğrula. CI hata verirse logdan düzelt ve yeniden çalıştır. Kod commit’ini, Actions sonucunu ve upstream ref/lisansı yalnız Rapor 08’e yaz, geri oku; görsel/Android doğrulamasını CI’dan ayrı belirt. Mükerrer Beyin görevi açma.
 
 ### Rapor 09
 
