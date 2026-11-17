@@ -102,14 +102,14 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 01
 
-- **Durum:** `blocked` — GdUnit4 kurulmadı; kabul testleri çalıştırılamadı.
-- **Olay:** `tamu-topdown-sohbet01-blocked-20261117-183746z` · UTC `2026-11-17T18:37:46Z`.
-- **Başlangıç HEAD:** `63c418f7b9e05693ff53fc6c2f97783cbd0e61c0`.
-- **Yazılan yol:** `SESSION_HANDOFF.md` (`Rapor 01`); kod commit’i yok.
-- **GdUnit4:** [v6.1.3 lisansı](https://github.com/godot-gdunit-labs/gdUnit4/blob/v6.1.3/LICENSE) MIT olarak geri okundu. Godot 4.7.2 ile kabul edilmiş bir sürüm yok; v6.1.3 kurulmadı.
-- **Gerçek kontroller:** `command -v godot godot4` çıktı vermedi; Godot 4.7.2 resmî GitHub paketine `curl` erişimi DNS hatası (6) döndürdü. Bunlar ortam kontrolleridir, oyun testi değildir.
-- **Test sonucu:** Godot 4.7.2 headless açılış, hareket ve yan yana nesnelerden dokunulanı seçme: çalıştırılmadı. GitHub Actions ve Android: çalıştırılmadı. Yeni dal ya da PR açılmadı.
-- **Sonraki adım:** Godot 4.7.2 çalıştırıcısına erişim sağlanınca seçilen GdUnit4 dağıtımını doğrula; üç kabul testini çalıştır ve APK dışında kaldığını kanıtla. SOHBET-02 kabulü beklemeli.
+- **Durum:** `review_requested` — GitHub Actions kabul testleri geçti. Koordinatör onayı bekleniyor.
+- **Olay:** `tamu-topdown-sohbet01-ci-44152103521` · UTC `2026-11-17T18:50:39Z` (CI tamamlanma zamanı).
+- **Başlangıç HEAD:** `c06d76e1bb1f713076179fec4513005cb1fe49c6`. **Test edilen kod:** [`dff1afce330f73fd6535c7886e667f3b9f0cd270`](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/commit/dff1afce330f73fd6535c7886e667f3b9f0cd270). Önceki engel raporu ilk commit'te korunuyor.
+- **Yollar:** `.github/workflows/godot-tests.yml`, `tests/prototype_test.gd`, `tests/.gdignore`. Oyun kaynakları değişmedi; yeni dal/PR yok.
+- **Eklenti:** [GdUnit4 v6.2.0, sabit kaynak](https://github.com/godot-gdunit-labs/gdUnit4/tree/d18770221c2df4a3c991a42fdce7907df40eea75), MIT. Yalnız CI'nın geçici proje kopyasına kuruldu; oyun checkout'una eklenmedi.
+- **Gerçek CI:** [44152103521](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/actions/runs/44152103521), başarılı. SHA-512 doğrulandı; motor `4.7.2.stable.official.ed1daf0bf`. `godot --headless --path . --editor --import` ve `godot --headless --path . --quit-after 10` geçti.
+- **GdUnit4:** `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests/prototype_test.gd --ignoreHeadlessMode` → 2/2, 0 hata, 0 atlanan test. Zemine sentetik dokunuşla hareket ve sandık/ağaç/boş alan ayrımı JUnit ile doğrulandı.
+- **Doğrulanmamış:** Android cihaz testi ve APK içeriği denetimi yapılmadı; CI bu çalıştırmada APK üretmedi. SOHBET-02 için koordinatör teslimi yeniden okumalı.
 
 ### Rapor 02
 
