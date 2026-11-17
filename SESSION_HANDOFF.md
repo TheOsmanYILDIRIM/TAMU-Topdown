@@ -114,7 +114,7 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 02
 
-- **Durum:** `review_requested` — Rubonnek envanter entegrasyonu main üzerinde tamamlandı; GitHub Actions kabulü geçti. Koordinatör kabulü bekleniyor.
+- **Durum:** `verified` — Koordinatör test kodunu, Actions job ve ham günlüklerini doğruladı: açılış ve GdUnit4 5/5 geçti. Test edilen kod ile inceleme HEAD’i arasında yalnız rapor değişmiş. Android doğrulanmadı; SOHBET-03 açılabilir.
 - **Olay:** `tamu-topdown-sohbet02-ci-44160232033` · UTC `2026-11-17T19:35:53Z`.
 - **Başlangıç HEAD:** `6d59ccd33084f044a5f492e90300445f7b00788d`. **Test edilen kod:** [`38b00e3d8848e23d626753648bfbf7c0adbece0b`](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/commit/38b00e3d8848e23d626753648bfbf7c0adbece0b).
 - **Upstream:** `Rubonnek/inventory-manager` dalı `master`, sabit commit `693d89f6caca96c7f357485674f54dcfb89ec6d5`; `addons/rubonnek.inventory_manager/LICENSE.md` MIT. Doğrulanmış addon dizini aynen taşındı; demo içeriği alınmadı.
@@ -126,7 +126,15 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 03
 
-SOHBET-03 | CodingQuests Save System — önceki kabulü bekliyor.
+SOHBET-03 | CodingQuests Save System — hazır; çalışma sohbeti açılmadı.
+
+**Brif:** Her mesajına `[SOHBET-03 | CodingQuests Save System]` ile başla. Yalnız bu entegrasyonu TAMU-Topdown `main` üzerinde yap; yeni dal veya PR yok. Mevcut HEAD, AGENTS, README ve Beyin görevi `tamu-topdown-bootstrap` ile başla. [CodingQuests Save System](https://store.godotengine.org/asset/codingquests/save-system/) için gerçek kaynağı, sürüm/commit ve MIT lisansını doğrula; yalnız kayıt çekirdeğini al, demo içeriğini taşıma. Eklentinin yazma ve kurtarma davranışını kaynak kodundan doğrula; eksikse aynı dizinde geçici dosya, son sağlam kayıt ve güvenli geri okuma desteğini kapsam içinde tamamla.
+
+**Sözleşme:** Oyuncu konumu, Rubonnek çanta/sandık yığınları ve alınmış dünya nesnesi, TAMU’nun tek sürümlü `state.json` kaydında ve sabit kimliklerle tutulur; NodePath veya geçici envanter ID’sini kalıcı anahtar yapma. `meta.json` yalnız menü özeti; eski/bozuk özet geçerli oyun kaydını geçersiz kılmaz. Geri yüklemeden önce sürümü, kimlikleri ve kapasiteyi doğrula; geçersiz durum canlı envanteri kısmen değiştirmesin. Tek odada kayıt/yükleme erişilebilir olsun. Görev, ayrı HUD veya başka entegrasyon açma.
+
+**Yazma kapsamı:** Kaynağı doğrulanan kayıt çekirdeği ve lisansı, kayıt adaptörü, `scripts/inventory_bridge.gd` (aktarımı bozmadan snapshot/restore sınırı), `scripts/prototype.gd`, `scenes/prototype.tscn`, gerekirse `project.godot`, `tests/` ve mevcut Godot Actions workflow’u (yalnız ilgili test kapsamı). Yalnız **Rapor 03** bölümüne teslim kaydı yaz; mevcut Avenox görevini güncelle, yenisini açma.
+
+**Kabul:** GitHub Actions’ta 02’nin beş testini koru. Oyuncu, çanta, sandık ve alınmış nesnenin round-trip testini; kesinti/tamamlanmamış yazım sonrası son sağlam kaydı yüklemeyi; bozuk veya desteklenmeyen kaydın canlı durumu değiştirmemesini doğrula. Testleri izole geçici slotta çalıştır. Kod commit’ini, CI bağlantısı ve sonuçlarını, upstream ref/lisansı ve rapor geri okumasını yaz. Telefon testi yapılmadıysa ayrı belirt. Sorun çıkarsa logu inceleyip kapsam içinde düzelt ve yeniden çalıştır.
 
 ### Rapor 04
 
