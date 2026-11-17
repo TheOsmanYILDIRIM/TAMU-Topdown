@@ -19,3 +19,19 @@ offset_top = 14.0
 offset_right = 608.0
 mouse_filter = 2
 text = "TAMU • Tap the floor or select an object"
+
+[node name="BagToChest" type="Button" parent="HUD"]
+offset_left = 32.0
+offset_top = 42.0
+offset_right = 150.0
+offset_bottom = 76.0
+text = "Bag → Chest"
+disabled = true
+
+[node name="ChestToBag" type="Button" parent="HUD"]
+offset_left = 158.0
+offset_top = 42.0
+offset_right = 276.0
+offset_bottom = 76.0
+text = "Chest → Bag"
+disabled = true

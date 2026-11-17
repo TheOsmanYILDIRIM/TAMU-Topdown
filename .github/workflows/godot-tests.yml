@@ -2,7 +2,7 @@ name: Godot startup and gameplay tests
 on:
   push:
     branches: [main]
-    paths: ['project.godot', 'scenes/**', 'scripts/**', 'tests/**', 'addons/**', '.github/workflows/godot-tests.yml']
+    paths: ['project.godot', 'scenes/**', 'scripts/**', 'tests/**', 'addons/**', 'data/**', '.github/workflows/godot-tests.yml']
   workflow_dispatch:
 
 permissions:
@@ -41,7 +41,7 @@ jobs:
           pin=d18770221c2df4a3c991a42fdce7907df40eea75
           work="$RUNNER_TEMP/tamu-test"
           mkdir -p "$work/addons"
-          cp -R project.godot scenes scripts tests "$work/"
+          cp -R project.godot scenes scripts tests addons data "$work/"
           rm "$work/tests/.gdignore"
           git init -q "$RUNNER_TEMP/gdunit-source"
           git -C "$RUNNER_TEMP/gdunit-source" fetch --quiet --depth=1 https://github.com/godot-gdunit-labs/gdUnit4.git "$pin"
@@ -63,11 +63,11 @@ jobs:
           from xml.etree import ElementTree as ET
           reports = list(Path("reports").rglob("*.xml"))
           cases = [case for report in reports for case in ET.parse(report).iter("testcase")]
-          expected = {"test_floor_touch_moves_player", "test_touch_selects_exact_object"}
+          expected = {"test_floor_touch_moves_player", "test_touch_selects_exact_object", "test_inventory_transfers_both_directions_through_selected_chest", "test_inventory_partial_transfer_stops_at_target_capacity", "test_inventory_full_target_preserves_source_and_total"}
           passed = {case.attrib.get("name") for case in cases if not any(case.find(x) is not None for x in ("failure", "error", "skipped"))}
           if not expected <= passed:
               raise SystemExit(f"Missing passing tests: {expected - passed}; recorded: {passed}")
-          print("Verified both required JUnit test cases passed.")
+          print("Verified all five required JUnit test cases passed.")
           PY
     defaults:
       run:
