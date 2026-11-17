@@ -1,0 +1,74 @@
+name: Godot startup and gameplay tests
+on:
+  push:
+    branches: [main]
+    paths: ['project.godot', 'scenes/**', 'scripts/**', 'tests/**', 'addons/**', '.github/workflows/godot-tests.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  headless:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install verified Godot 4.7.2
+        run: |
+          archive=Godot_v4.7.2-stable_linux.x86_64.zip
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/$archive" "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/$archive"
+          printf '%s  %s\n' 9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65 "$RUNNER_TEMP/$archive" | sha512sum --check
+          unzip -q "$RUNNER_TEMP/$archive" -d "$RUNNER_TEMP/godot-bin"
+          mv "$RUNNER_TEMP/godot-bin/Godot_v4.7.2-stable_linux.x86_64" "$RUNNER_TEMP/godot-bin/godot"
+          chmod +x "$RUNNER_TEMP/godot-bin/godot"
+          "$RUNNER_TEMP/godot-bin/godot" --version | grep -E '^4\.7\.2\.stable\.'
+          echo "$RUNNER_TEMP/godot-bin" >> "$GITHUB_PATH"
+
+      - name: Headless startup without test dependencies
+        run: |
+          godot --headless --path . --editor --import 2>&1 | tee "$RUNNER_TEMP/tamu-import.log"
+          godot --headless --path . --quit-after 10 2>&1 | tee "$RUNNER_TEMP/tamu-startup.log"
+          if grep -Eq 'SCRIPT ERROR|ERROR:|Parse Error' "$RUNNER_TEMP"/tamu-{import,startup}.log; then
+            exit 1
+          fi
+
+      # MIT: https://github.com/godot-gdunit-labs/gdUnit4/blob/d18770221c2df4a3c991a42fdce7907df40eea75/LICENSE
+      - name: Install GdUnit4 v6.2.0 into a CI-only project copy
+        run: |
+          pin=d18770221c2df4a3c991a42fdce7907df40eea75
+          work="$RUNNER_TEMP/tamu-test"
+          mkdir -p "$work/addons"
+          cp -R project.godot scenes scripts tests "$work/"
+          rm "$work/tests/.gdignore"
+          git init -q "$RUNNER_TEMP/gdunit-source"
+          git -C "$RUNNER_TEMP/gdunit-source" fetch --quiet --depth=1 https://github.com/godot-gdunit-labs/gdUnit4.git "$pin"
+          git -C "$RUNNER_TEMP/gdunit-source" archive FETCH_HEAD LICENSE addons/gdUnit4 | tar -x -C "$work"
+          grep -q '^version="6.2.0"$' "$work/addons/gdUnit4/plugin.cfg"
+          grep -q '^MIT License' "$work/LICENSE"
+          mv "$work/LICENSE" "$work/addons/gdUnit4/LICENSE"
+
+      - name: GdUnit4 movement and touch-selection tests
+        working-directory: ${{ runner.temp }}/tamu-test
+        run: |
+          godot --headless --path . --editor --import 2>&1 | tee "$RUNNER_TEMP/tamu-test-import.log"
+          godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests/prototype_test.gd --ignoreHeadlessMode 2>&1 | tee "$RUNNER_TEMP/tamu-gdunit.log"
+          if grep -Eq 'SCRIPT ERROR|Parse Error' "$RUNNER_TEMP"/tamu-{test-import,gdunit}.log; then
+            exit 1
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+          reports = list(Path("reports").rglob("*.xml"))
+          cases = [case for report in reports for case in ET.parse(report).iter("testcase")]
+          expected = {"test_floor_touch_moves_player", "test_touch_selects_exact_object"}
+          passed = {case.attrib.get("name") for case in cases if not any(case.find(x) is not None for x in ("failure", "error", "skipped"))}
+          if not expected <= passed:
+              raise SystemExit(f"Missing passing tests: {expected - passed}; recorded: {passed}")
+          print("Verified both required JUnit test cases passed.")
+          PY
+    defaults:
+      run:
+        shell: bash
