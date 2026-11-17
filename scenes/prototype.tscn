@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scripts/prototype.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/player.gd" id="2"]
@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://addons/survival_core/day_night_clock.gd" id="10"]
 [ext_resource type="Script" path="res://addons/survival_core/survival_stats.gd" id="11"]
 [ext_resource type="Script" path="res://scripts/survival_adapter.gd" id="12"]
+[ext_resource type="Script" path="res://scripts/interaction_feedback_adapter.gd" id="13"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_attack"]
 radius = 24.0
@@ -143,6 +144,10 @@ auto_tick = false
 
 [node name="SurvivalAdapter" type="Node" parent="."]
 script = ExtResource("12")
+
+[node name="InteractionFeedback" type="Node2D" parent="."]
+z_index = 20
+script = ExtResource("13")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 

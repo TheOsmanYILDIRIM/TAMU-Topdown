@@ -617,6 +617,69 @@ func test_survival_death_uses_existing_health_path() -> void:
 	assert_int(int(events["died"])).is_equal(1)
 
 
+func test_interaction_feedback_highlights_exact_tapped_target() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.player.position = Vector2(250.0, 190.0)
+	room.player.stop_walking()
+
+	await _tap(room, Prototype.CHEST)
+	var feedback: TamuInteractionFeedbackAdapter = room.interaction_feedback
+	assert_str(String(room.selected)).is_equal("Chest")
+	assert_str(String(feedback.selected_target)).is_equal("Chest")
+	assert_bool(feedback.visible).is_true()
+	assert_bool(feedback.position.is_equal_approx(Prototype.CHEST)).is_true()
+	assert_bool(feedback.in_range).is_true()
+	assert_int(feedback.pulse_count).is_equal(1)
+
+
+func test_interaction_feedback_replaces_target_and_clears_on_empty_touch() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.player.position = Vector2(320.0, 195.0)
+	room.player.stop_walking()
+
+	await _tap(room, Prototype.CHEST)
+	var feedback: TamuInteractionFeedbackAdapter = room.interaction_feedback
+	assert_str(String(feedback.selected_target)).is_equal("Chest")
+	assert_int(feedback.pulse_count).is_equal(1)
+
+	await _tap(room, Prototype.TREE)
+	assert_str(String(room.selected)).is_equal("Tree")
+	assert_str(String(feedback.selected_target)).is_equal("Tree")
+	assert_bool(feedback.position.is_equal_approx(Prototype.TREE)).is_true()
+	assert_int(feedback.pulse_count).is_equal(2)
+
+	await _tap(room, Vector2(315.0, 199.0))
+	assert_str(String(room.selected)).is_empty()
+	assert_str(String(feedback.selected_target)).is_empty()
+	assert_bool(feedback.visible).is_false()
+
+
+func test_interaction_feedback_out_of_range_does_not_enable_interaction() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	var bag_before := room.inventory.count(room.inventory.bag)
+	var chest_before := room.inventory.count(room.inventory.chest)
+
+	await _tap(room, Prototype.CHEST)
+	var feedback: TamuInteractionFeedbackAdapter = room.interaction_feedback
+	assert_str(String(room.selected)).is_equal("Chest")
+	assert_bool(feedback.visible).is_true()
+	assert_bool(feedback.in_range).is_false()
+	assert_bool(feedback.current_color().is_equal_approx(TamuInteractionFeedbackAdapter.OUT_OF_RANGE_COLOR)).is_true()
+	assert_bool(room.bag_to_chest_button.disabled).is_true()
+	assert_int(room.transfer_to_selected_chest(1)).is_equal(0)
+	assert_int(room.inventory.count(room.inventory.bag)).is_equal(bag_before)
+	assert_int(room.inventory.count(room.inventory.chest)).is_equal(chest_before)
+
+
 func _wait_for_attack_end(room: Prototype, tree: SceneTree) -> void:
 	for frame in range(60):
 		if not room.attack_active:

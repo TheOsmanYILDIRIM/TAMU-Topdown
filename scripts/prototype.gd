@@ -25,6 +25,7 @@ const SaveAdapter = preload("res://scripts/save_adapter.gd")
 @onready var passive_animal: TamuPassiveAnimal = $PassiveAnimal
 @onready var attack_hit_box: BasicHitBox2D = $Player/AttackHitBox
 @onready var attack_window: Timer = $AttackWindow
+@onready var interaction_feedback: TamuInteractionFeedbackAdapter = $InteractionFeedback
 
 var selected: StringName = &""
 var inventory: TamuInventoryBridge
@@ -87,10 +88,12 @@ func select_at(point: Vector2) -> void:
 		selected = &""
 		player.walk_to(point)
 		_update_inventory_controls()
+		_sync_interaction_feedback(false)
 		queue_redraw()
 		return
 	player.stop_walking()
 	_update_inventory_controls()
+	_sync_interaction_feedback(true)
 	queue_redraw()
 
 
@@ -125,6 +128,33 @@ func _target_for_selected() -> Vector2:
 	if selected == &"Pickup2":
 		return PICKUP_TWO
 	return player.position
+
+
+func _selection_feedback_radius() -> float:
+	if selected == &"Chest":
+		return 27.0
+	if selected == &"Tree":
+		return 29.0
+	if selected == &"Pickup" or selected == &"Pickup2":
+		return 18.0
+	return 27.0
+
+
+func _sync_interaction_feedback(tap_feedback: bool = false) -> void:
+	if interaction_feedback == null:
+		return
+	if selected == &"":
+		interaction_feedback.clear_target()
+		return
+	var target_position := _target_for_selected()
+	var reachable := player.position.distance_to(target_position) <= INTERACTION_DISTANCE
+	interaction_feedback.show_target(
+		selected,
+		target_position,
+		_selection_feedback_radius(),
+		reachable,
+		tap_feedback
+	)
 
 
 func _chest_reachable() -> bool:
@@ -169,6 +199,7 @@ func take_selected_pickup() -> bool:
 		pickup_two_taken = true
 	selected = &""
 	_update_inventory_controls()
+	_sync_interaction_feedback(false)
 	queue_redraw()
 	return true
 
@@ -215,6 +246,7 @@ func load_game(slot_id: int = 1) -> Dictionary:
 	pickup_two_taken = bool(decoded.get("pickup_two_taken", pickup_two_taken))
 	selected = &""
 	_update_inventory_controls()
+	_sync_interaction_feedback(false)
 	queue_redraw()
 	return result
 
@@ -264,6 +296,7 @@ func _update_passive_animal_threat() -> void:
 
 func _process(_delta: float) -> void:
 	_update_passive_animal_threat()
+	_sync_interaction_feedback(false)
 	var label := "TAMU • Quest %d/%d" % [quest.progress(), quest.target()]
 	if quest.is_reward_claimed():
 		label += " • Reward claimed"
@@ -289,5 +322,3 @@ func _draw() -> void:
 		draw_circle(PICKUP, 11.0, Color("#c99a58"), true, -1.0, true)
 	if not pickup_two_taken:
 		draw_circle(PICKUP_TWO, 11.0, Color("#c99a58"), true, -1.0, true)
-	if selected != &"":
-		draw_arc(_target_for_selected(), 27.0, 0.0, TAU, 40, Color("#f7d38a"), 2.0, true)
