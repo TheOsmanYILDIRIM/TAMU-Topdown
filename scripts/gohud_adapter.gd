@@ -7,10 +7,13 @@ signal chest_to_bag_requested
 const PANEL_BG := Color("#101915e8")
 const PANEL_BORDER := Color("#65756d")
 const ACCENT := Color("#d2a65a")
+const AudioSettings = preload("res://addons/settings_menus/audio_settings.gd")
 
 var inventory: TamuInventoryBridge
 var chest_reachable := false
 var bag_open := false
+var pause_open := false
+var audio_open := false
 
 var hotbar_frame: PanelContainer
 var hotbar: GoSlotGrid
@@ -22,6 +25,16 @@ var bag_total: Label
 var chest_total: Label
 var bag_to_chest_button: Button
 var chest_to_bag_button: Button
+var pause_button: Button
+var pause_overlay: ColorRect
+var pause_panel: PanelContainer
+var audio_panel: PanelContainer
+var resume_button: Button
+var audio_button: Button
+var audio_back_button: Button
+var audio_sliders: Dictionary = {}
+var audio_settings: TamuAudioSettings
+var _syncing_audio_controls := false
 
 var _safe_area_override := Rect2()
 var _safe_area_override_enabled := false
@@ -34,12 +47,18 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	audio_settings = AudioSettings.new()
+	audio_settings.load_and_apply()
 	_build()
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 
 
 func _exit_tree() -> void:
+	var tree := get_tree()
+	if pause_open and tree != null:
+		tree.paused = false
 	_restore_back_behavior()
 
 
@@ -144,6 +163,128 @@ func _build() -> void:
 	actions.add_child(chest_to_bag_button)
 
 	bag_panel.visible = false
+	_build_settings_menu()
+
+
+func _build_settings_menu() -> void:
+	pause_button = Button.new()
+	pause_button.name = "PauseButton"
+	pause_button.text = "Pause"
+	pause_button.custom_minimum_size = Vector2(72.0, 44.0)
+	pause_button.focus_mode = Control.FOCUS_NONE
+	pause_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	pause_button.pressed.connect(open_pause)
+	add_child(pause_button)
+
+	pause_overlay = ColorRect.new()
+	pause_overlay.name = "PauseOverlay"
+	pause_overlay.color = Color(0.03, 0.05, 0.04, 0.82)
+	pause_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	pause_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(pause_overlay)
+
+	var center := CenterContainer.new()
+	center.name = "MenuCenter"
+	center.mouse_filter = Control.MOUSE_FILTER_PASS
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	pause_overlay.add_child(center)
+
+	var host := Control.new()
+	host.name = "MenuHost"
+	host.custom_minimum_size = Vector2(360.0, 250.0)
+	host.mouse_filter = Control.MOUSE_FILTER_PASS
+	center.add_child(host)
+
+	pause_panel = PanelContainer.new()
+	pause_panel.name = "PausePanel"
+	pause_panel.position = Vector2(40.0, 30.0)
+	pause_panel.size = Vector2(280.0, 190.0)
+	pause_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	pause_panel.add_theme_stylebox_override(&"panel", _panel_style())
+	host.add_child(pause_panel)
+
+	var pause_column := VBoxContainer.new()
+	pause_column.add_theme_constant_override(&"separation", 12)
+	pause_panel.add_child(pause_column)
+
+	var pause_title := Label.new()
+	pause_title.text = "Paused"
+	pause_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pause_title.add_theme_font_size_override(&"font_size", 22)
+	pause_column.add_child(pause_title)
+
+	resume_button = _menu_button("Resume")
+	resume_button.pressed.connect(resume_game)
+	pause_column.add_child(resume_button)
+
+	audio_button = _menu_button("Audio")
+	audio_button.pressed.connect(open_audio)
+	pause_column.add_child(audio_button)
+
+	audio_panel = PanelContainer.new()
+	audio_panel.name = "AudioPanel"
+	audio_panel.position = Vector2(0.0, 0.0)
+	audio_panel.size = Vector2(360.0, 250.0)
+	audio_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	audio_panel.add_theme_stylebox_override(&"panel", _panel_style())
+	host.add_child(audio_panel)
+
+	var audio_column := VBoxContainer.new()
+	audio_column.add_theme_constant_override(&"separation", 8)
+	audio_panel.add_child(audio_column)
+
+	var audio_title := Label.new()
+	audio_title.text = "Audio"
+	audio_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	audio_title.add_theme_font_size_override(&"font_size", 20)
+	audio_column.add_child(audio_title)
+
+	_add_audio_slider(audio_column, "Master", "master")
+	_add_audio_slider(audio_column, "Music", "music")
+	_add_audio_slider(audio_column, "SFX", "sfx")
+
+	audio_back_button = _menu_button("Back")
+	audio_back_button.pressed.connect(close_audio)
+	audio_column.add_child(audio_back_button)
+
+	pause_overlay.visible = false
+	pause_panel.visible = true
+	audio_panel.visible = false
+
+
+func _menu_button(label: String) -> Button:
+	var button := Button.new()
+	button.text = label
+	button.custom_minimum_size = Vector2(0.0, 44.0)
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	return button
+
+
+func _add_audio_slider(parent: VBoxContainer, label_text: String, bus_key: String) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override(&"separation", 10)
+	parent.add_child(row)
+
+	var label := Label.new()
+	label.text = label_text
+	label.custom_minimum_size = Vector2(72.0, 0.0)
+	row.add_child(label)
+
+	var slider := HSlider.new()
+	slider.name = "%sSlider" % label_text
+	slider.min_value = 0.0
+	slider.max_value = 1.0
+	slider.step = 0.05
+	slider.custom_minimum_size = Vector2(210.0, 38.0)
+	slider.mouse_filter = Control.MOUSE_FILTER_STOP
+	slider.value_changed.connect(func(value: float) -> void:
+		if _syncing_audio_controls or audio_settings == null:
+			return
+		audio_settings.set_level(bus_key, value, true)
+	)
+	row.add_child(slider)
+	audio_sliders[bus_key] = slider
 
 
 func _panel_style() -> StyleBoxFlat:
@@ -205,15 +346,11 @@ func toggle_bag() -> void:
 func open_bag() -> void:
 	if bag_open:
 		return
+	if pause_open:
+		return
 	bag_open = true
 	bag_panel.visible = true
-	var tree := get_tree()
-	if tree != null:
-		var current: Variant = tree.get("quit_on_go_back")
-		if current is bool:
-			_previous_quit_on_go_back = current
-			tree.set("quit_on_go_back", false)
-			_back_override_active = true
+	_update_back_override()
 	_layout()
 
 
@@ -222,7 +359,124 @@ func close_bag() -> void:
 		return
 	bag_open = false
 	bag_panel.visible = false
-	_restore_back_behavior()
+	_update_back_override()
+
+
+func open_pause() -> void:
+	if pause_open:
+		return
+	if bag_open:
+		close_bag()
+	pause_open = true
+	audio_open = false
+	pause_panel.visible = true
+	audio_panel.visible = false
+	pause_overlay.visible = true
+	_sync_audio_controls()
+	var tree := get_tree()
+	if tree != null:
+		tree.paused = true
+	_update_back_override()
+
+
+func resume_game() -> void:
+	if not pause_open:
+		return
+	audio_open = false
+	pause_open = false
+	pause_overlay.visible = false
+	pause_panel.visible = true
+	audio_panel.visible = false
+	var tree := get_tree()
+	if tree != null:
+		tree.paused = false
+	_update_back_override()
+
+
+func open_audio() -> void:
+	if not pause_open:
+		return
+	audio_open = true
+	pause_panel.visible = false
+	audio_panel.visible = true
+	_sync_audio_controls()
+
+
+func close_audio() -> void:
+	if not audio_open:
+		return
+	audio_open = false
+	audio_panel.visible = false
+	pause_panel.visible = true
+
+
+func set_audio_level(bus_key: String, value: float, persist: bool = true) -> Error:
+	if audio_settings == null:
+		return ERR_UNCONFIGURED
+	var err := audio_settings.set_level(bus_key, value, persist)
+	_sync_audio_controls()
+	return err
+
+
+func audio_level(bus_key: String) -> float:
+	if audio_settings == null:
+		return 1.0
+	return audio_settings.get_level(bus_key)
+
+
+func set_audio_settings_file(path: String) -> void:
+	if audio_settings == null:
+		audio_settings = AudioSettings.new(path)
+	else:
+		audio_settings.save_file = path
+
+
+func reload_audio_settings() -> Error:
+	if audio_settings == null:
+		return ERR_UNCONFIGURED
+	var err := audio_settings.load_and_apply()
+	_sync_audio_controls()
+	return err
+
+
+func reset_audio_defaults(persist: bool = false) -> Error:
+	if audio_settings == null:
+		return ERR_UNCONFIGURED
+	var err := audio_settings.reset_to_defaults(persist)
+	_sync_audio_controls()
+	return err
+
+
+func audio_settings_file() -> String:
+	if audio_settings == null:
+		return ""
+	return audio_settings.save_file
+
+
+func _sync_audio_controls() -> void:
+	if audio_settings == null or audio_sliders.is_empty():
+		return
+	_syncing_audio_controls = true
+	for key_value: Variant in audio_sliders.keys():
+		var key := String(key_value)
+		var slider := audio_sliders[key] as HSlider
+		slider.set_value_no_signal(audio_settings.get_level(key))
+	_syncing_audio_controls = false
+
+
+func _update_back_override() -> void:
+	var tree := get_tree()
+	if tree == null:
+		return
+	var needs_override := bag_open or pause_open
+	if needs_override and not _back_override_active:
+		var current: Variant = tree.get("quit_on_go_back")
+		if current is bool:
+			_previous_quit_on_go_back = current
+			tree.set("quit_on_go_back", false)
+			_back_override_active = true
+	elif not needs_override:
+		_restore_back_behavior()
 
 
 func _restore_back_behavior() -> void:
@@ -234,18 +488,36 @@ func _restore_back_behavior() -> void:
 	_back_override_active = false
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if handle_back_event(event):
+		get_viewport().set_input_as_handled()
+
+
 func handle_back_event(event: InputEvent) -> bool:
-	if not bag_open:
+	if not (event is InputEventKey and event.pressed and not event.echo):
 		return false
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ESCAPE or event.keycode == KEY_BACK:
-			close_bag()
-			return true
+	if event.keycode != KEY_ESCAPE and event.keycode != KEY_BACK:
+		return false
+	if audio_open:
+		close_audio()
+		return true
+	if pause_open:
+		resume_game()
+		return true
+	if bag_open:
+		close_bag()
+		return true
 	return false
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_GO_BACK_REQUEST and bag_open:
+	if what != NOTIFICATION_WM_GO_BACK_REQUEST:
+		return
+	if audio_open:
+		close_audio()
+	elif pause_open:
+		resume_game()
+	elif bag_open:
 		close_bag()
 
 
@@ -277,6 +549,14 @@ func hotbar_touch_point() -> Vector2:
 	if first == null:
 		return hotbar_frame.position + hotbar_frame.size * 0.5
 	return hotbar_frame.position + hotbar.position + first.position + first.size * 0.5
+
+
+func pause_touch_point() -> Vector2:
+	return pause_button.position + pause_button.size * 0.5
+
+
+func pause_overlay_touch_point() -> Vector2:
+	return Vector2(16.0, 180.0)
 
 
 func displayed_hotbar_total() -> int:
@@ -343,3 +623,10 @@ func _layout() -> void:
 		maxf(area.position.y + 8.0, row_y - panel_height - 8.0)
 	)
 	bag_panel.size = Vector2(panel_width, panel_height)
+
+	var pause_size := Vector2(72.0, 44.0)
+	pause_button.position = Vector2(
+		area.end.x - pause_size.x - 8.0,
+		minf(area.end.y - pause_size.y - 8.0, area.position.y + 84.0)
+	)
+	pause_button.size = pause_size
