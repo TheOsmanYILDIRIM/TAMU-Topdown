@@ -758,3 +758,98 @@ func _tap(room: Prototype, point: Vector2) -> void:
 	event.pressed = true
 	room.get_viewport().push_input(event, true)
 	await room.get_tree().process_frame
+
+func test_gohud_quantities_follow_rubonnek_transfer_and_load() -> void:
+	var slot_id := 9509
+	SaveManager.delete_slot(slot_id)
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	assert_int(room.mobile_hud.displayed_hotbar_total()).is_equal(12)
+	assert_int(room.mobile_hud.displayed_bag_total()).is_equal(12)
+	assert_int(room.mobile_hud.displayed_chest_total()).is_equal(0)
+
+	room.player.position = Vector2(250.0, 190.0)
+	room.select_at(Prototype.CHEST)
+	assert_int(room.transfer_to_selected_chest(4)).is_equal(4)
+	assert_int(room.inventory.count(room.inventory.bag)).is_equal(8)
+	assert_int(room.inventory.count(room.inventory.chest)).is_equal(4)
+	assert_int(room.mobile_hud.displayed_hotbar_total()).is_equal(8)
+	assert_int(room.mobile_hud.displayed_bag_total()).is_equal(8)
+	assert_int(room.mobile_hud.displayed_chest_total()).is_equal(4)
+	assert_int(room.save_game(slot_id)).is_equal(OK)
+
+	assert_int(room.transfer_to_selected_chest(2)).is_equal(2)
+	assert_int(room.mobile_hud.displayed_bag_total()).is_equal(6)
+	assert_int(room.mobile_hud.displayed_chest_total()).is_equal(6)
+
+	var loaded := room.load_game(slot_id)
+	assert_bool(bool(loaded.get("ok", false))).is_true()
+	assert_int(room.inventory.count(room.inventory.bag)).is_equal(8)
+	assert_int(room.inventory.count(room.inventory.chest)).is_equal(4)
+	assert_int(room.mobile_hud.displayed_hotbar_total()).is_equal(8)
+	assert_int(room.mobile_hud.displayed_bag_total()).is_equal(8)
+	assert_int(room.mobile_hud.displayed_chest_total()).is_equal(4)
+	assert_int(SaveManager.delete_slot(slot_id)).is_equal(OK)
+
+
+func test_gohud_touch_is_consumed_before_world_input() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	var start := room.player.position
+	room.player.stop_walking()
+
+	var event := InputEventScreenTouch.new()
+	event.position = room.mobile_hud.hotbar_touch_point()
+	event.pressed = true
+	room.get_viewport().push_input(event, true)
+	await tree.process_frame
+	for frame: int in range(8):
+		await tree.physics_frame
+
+	assert_bool(room.player.position.distance_to(start) < 0.01).is_true()
+	assert_str(String(room.selected)).is_empty()
+
+
+func test_gohud_back_closes_open_bag_before_world_behavior() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.mobile_hud.open_bag()
+	assert_bool(room.mobile_hud.bag_open).is_true()
+
+	var event := InputEventKey.new()
+	event.keycode = KEY_ESCAPE
+	event.pressed = true
+	room.get_viewport().push_input(event, true)
+	await tree.process_frame
+
+	assert_bool(room.mobile_hud.bag_open).is_false()
+	assert_bool(room.mobile_hud.handle_back_event(event)).is_false()
+
+
+func test_gohud_injected_safe_area_fits_narrow_and_wide() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	var narrow := Rect2(12.0, 8.0, 296.0, 344.0)
+	room.mobile_hud.set_safe_area_override(narrow)
+	room.mobile_hud.open_bag()
+	await tree.process_frame
+	assert_bool(narrow.encloses(room.mobile_hud.hotbar_row_rect())).is_true()
+	assert_bool(narrow.encloses(room.mobile_hud.bag_panel_rect())).is_true()
+
+	var wide := Rect2(24.0, 12.0, 592.0, 336.0)
+	room.mobile_hud.set_safe_area_override(wide)
+	await tree.process_frame
+	assert_bool(wide.encloses(room.mobile_hud.hotbar_row_rect())).is_true()
+	assert_bool(wide.encloses(room.mobile_hud.bag_panel_rect())).is_true()
+	room.mobile_hud.close_bag()
+

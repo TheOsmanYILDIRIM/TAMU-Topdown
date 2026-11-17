@@ -50,7 +50,7 @@ jobs:
           git -C "$RUNNER_TEMP/gdunit-source" show FETCH_HEAD:LICENSE > "$work/addons/gdUnit4/LICENSE"
           grep -q '^MIT License' "$work/addons/gdUnit4/LICENSE"
 
-      - name: GdUnit4 movement, inventory, save, quest, combat, state machine, survival, and interaction feedback tests
+      - name: GdUnit4 movement, inventory, save, quest, combat, state machine, survival, interaction feedback, and Gohud tests
         working-directory: ${{ runner.temp }}/tamu-test
         run: |
           godot --headless --path . --editor --import 2>&1 | tee "$RUNNER_TEMP/tamu-test-import.log"
@@ -93,11 +93,15 @@ jobs:
               "test_interaction_feedback_highlights_exact_tapped_target",
               "test_interaction_feedback_replaces_target_and_clears_on_empty_touch",
               "test_interaction_feedback_out_of_range_does_not_enable_interaction",
+              "test_gohud_quantities_follow_rubonnek_transfer_and_load",
+              "test_gohud_touch_is_consumed_before_world_input",
+              "test_gohud_back_closes_open_bag_before_world_behavior",
+              "test_gohud_injected_safe_area_fits_narrow_and_wide",
           }
           passed = {case.attrib.get("name") for case in cases if not any(case.find(x) is not None for x in ("failure", "error", "skipped"))}
           if not expected <= passed:
               raise SystemExit(f"Missing passing tests: {expected - passed}; recorded: {passed}")
-          print("Verified all twenty-nine required JUnit test cases passed.")
+          print("Verified all thirty-three required JUnit test cases passed.")
           PY
     defaults:
       run:

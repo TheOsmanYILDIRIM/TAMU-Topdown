@@ -26,6 +26,7 @@ const SaveAdapter = preload("res://scripts/save_adapter.gd")
 @onready var attack_hit_box: BasicHitBox2D = $Player/AttackHitBox
 @onready var attack_window: Timer = $AttackWindow
 @onready var interaction_feedback: TamuInteractionFeedbackAdapter = $InteractionFeedback
+@onready var mobile_hud: TamuGohudAdapter = $HUD/MobileHud
 
 var selected: StringName = &""
 var inventory: TamuInventoryBridge
@@ -48,6 +49,8 @@ func _ready() -> void:
 	reward_button.pressed.connect(_on_claim_reward_pressed)
 	save_button.pressed.connect(_on_save_pressed)
 	load_button.pressed.connect(_on_load_pressed)
+	mobile_hud.bag_to_chest_requested.connect(_on_bag_to_chest_pressed)
+	mobile_hud.chest_to_bag_requested.connect(_on_chest_to_bag_pressed)
 	attack_hit_box.hurt_box_entered.connect(_on_attack_hurt_box_entered)
 	attack_window.timeout.connect(_on_attack_window_timeout)
 	attack_window.wait_time = ATTACK_WINDOW_SECONDS
@@ -57,6 +60,9 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if mobile_hud != null and mobile_hud.handle_back_event(event):
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SPACE:
 		perform_attack()
 		get_viewport().set_input_as_handled()
@@ -283,6 +289,8 @@ func _update_inventory_controls() -> void:
 	chest_to_bag_button.disabled = not reachable or inventory.count(inventory.chest) <= 0
 	take_button.disabled = not _pickup_reachable()
 	reward_button.disabled = not quest.is_completed() or quest.is_reward_claimed()
+	if mobile_hud != null:
+		mobile_hud.sync_inventory(inventory, reachable)
 
 
 func _update_passive_animal_threat() -> void:
