@@ -150,7 +150,13 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 05
 
-SOHBET-05 | ClutteredCode 2D savaş — önceki kabulü bekliyor.
+SOHBET-05 | ClutteredCode 2D savaş — hazır. Rapor 04 ve Actions 44169867834 bağımsız doğrulandı: test edilen 55108657 commit’inde 13/13; sonrasındaki değişiklik yalnız rapor.
+
+**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; yeni dal veya PR yok. HEAD, AGENTS.md, README.md, bu dosya ve mevcut `tamu-topdown-bootstrap` görevini doğrula. Kaynak `cluttered-code/godot-health-hitbox-hurtbox`, `v5.0.4` = `047ecab162451f0c4bc834439600bacf99416458`, kökte `LICENSE` (MIT). Mağaza sürümü kararsız işaretli; kabulü gerçek CI ile yap. Yalnız `BasicHitBox2D`, `BasicHurtBox2D`, `Health` ve zorunlu bağımlılıklarını/lisansı taşı. Demo, 3D, hitscan veya ayrı sağlık sistemi ekleme.
+
+**Hedef ve kapsam:** Tek odada oyuncunun saldırısı bir geçici hedefe hasar verebilsin; her saldırı aynı hedefe en fazla bir kez hasar versin. Saldırı penceresi dışında veya menzil dışındayken hasar olmasın; can sıfıra indiğinde ölüm bir kez işlensin. Tek can kaynağı Health; sonraki FSM için hasar/ölüm sinyalleri ayrı kalsın. İzinli kapsam: upstream çekirdeği ve lisansı, savaş adaptörü/tek test hedefi, gerekli prototype sahne ve script bağlantıları, gerekiyorsa giriş tanımı, ilgili testler ve mevcut Godot workflow’unun test kapsamı. Kayıt, görev, yapay zekâ ve HUD şemasını değiştirme.
+
+**Kabul ve teslim:** Önceki 13 testi koru. Godot 4.7.2 GitHub Actions’ta gerçek 2D çarpışmayla isabet, ıskalama, aynı saldırıda tekrarlı hasar olmaması ve ölümün bir kez tetiklenmesini doğrula. Hata varsa logdan düzelt ve yeniden çalıştır. Kod commit’ini, ilgili başarılı Actions sonucunu ve lisans/ref’i yalnız Rapor 05’e yazıp geri oku. Android testi varsa ayrı belirt. Yeni Beyin görevi açma.
 
 ### Rapor 06
 
