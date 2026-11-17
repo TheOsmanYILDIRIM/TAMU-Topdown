@@ -853,3 +853,166 @@ func test_gohud_injected_safe_area_fits_narrow_and_wide() -> void:
 	assert_bool(wide.encloses(room.mobile_hud.bag_panel_rect())).is_true()
 	room.mobile_hud.close_bag()
 
+
+
+func test_settings_pause_and_resume_freeze_world_but_menu_keeps_working() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	var start := room.player.position
+	room.player.walk_to(start + Vector2(100.0, 0.0))
+	await tree.physics_frame
+	var paused_at := room.player.position
+
+	room.mobile_hud.open_pause()
+	assert_bool(tree.paused).is_true()
+	assert_bool(room.mobile_hud.pause_open).is_true()
+	assert_bool(room.mobile_hud.pause_overlay.visible).is_true()
+	for frame: int in range(8):
+		await tree.process_frame
+	assert_bool(room.player.position.distance_to(paused_at) < 0.01).is_true()
+	assert_bool(room.mobile_hud.resume_button.visible).is_true()
+
+	room.mobile_hud.resume_button.pressed.emit()
+	await tree.process_frame
+	assert_bool(tree.paused).is_false()
+	assert_bool(room.mobile_hud.pause_open).is_false()
+	for frame: int in range(12):
+		await tree.physics_frame
+	assert_bool(room.player.position.distance_to(paused_at) > 1.0).is_true()
+
+
+func test_settings_audio_reload_is_separate_from_game_save() -> void:
+	var slot_id := 9510
+	var settings_path := "user://tamu_audio_settings_test_9510.json"
+	_remove_settings_files(settings_path)
+	SaveManager.delete_slot(slot_id)
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	room.mobile_hud.set_audio_settings_file(settings_path)
+	assert_int(room.mobile_hud.reset_audio_defaults(false)).is_equal(OK)
+	assert_int(room.mobile_hud.set_audio_level("master", 0.35, true)).is_equal(OK)
+	assert_int(room.mobile_hud.set_audio_level("music", 0.45, true)).is_equal(OK)
+	assert_int(room.mobile_hud.set_audio_level("sfx", 0.55, true)).is_equal(OK)
+	assert_bool(FileAccess.file_exists(settings_path)).is_true()
+	assert_bool(not settings_path.begins_with("user://saves/")).is_true()
+	assert_int(room.save_game(slot_id)).is_equal(OK)
+
+	assert_int(room.mobile_hud.set_audio_level("master", 1.0, false)).is_equal(OK)
+	assert_int(room.mobile_hud.set_audio_level("music", 1.0, false)).is_equal(OK)
+	assert_int(room.mobile_hud.set_audio_level("sfx", 1.0, false)).is_equal(OK)
+	assert_int(room.mobile_hud.reload_audio_settings()).is_equal(OK)
+	assert_bool(absf(room.mobile_hud.audio_level("master") - 0.35) < 0.001).is_true()
+	assert_bool(absf(room.mobile_hud.audio_level("music") - 0.45) < 0.001).is_true()
+	assert_bool(absf(room.mobile_hud.audio_level("sfx") - 0.55) < 0.001).is_true()
+
+	var state_file := FileAccess.open(SaveManager.state_path_for_slot(slot_id), FileAccess.READ)
+	assert_bool(state_file != null).is_true()
+	var state_text := state_file.get_as_text()
+	state_file.close()
+	assert_bool(not state_text.contains("audio")).is_true()
+	assert_bool(not state_text.contains("tamu_audio_settings")).is_true()
+
+	room.mobile_hud.reset_audio_defaults(false)
+	_remove_settings_files(settings_path)
+	assert_int(SaveManager.delete_slot(slot_id)).is_equal(OK)
+
+
+func test_settings_missing_or_corrupt_file_uses_safe_audio_defaults() -> void:
+	var settings_path := "user://tamu_audio_settings_test_9511.json"
+	_remove_settings_files(settings_path)
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.mobile_hud.set_audio_settings_file(settings_path)
+
+	assert_int(room.mobile_hud.reload_audio_settings()).is_equal(OK)
+	assert_bool(absf(room.mobile_hud.audio_level("master") - 1.0) < 0.001).is_true()
+	assert_bool(absf(room.mobile_hud.audio_level("music") - 1.0) < 0.001).is_true()
+	assert_bool(absf(room.mobile_hud.audio_level("sfx") - 1.0) < 0.001).is_true()
+
+	_write_text(settings_path, "{broken")
+	assert_bool(room.mobile_hud.reload_audio_settings() != OK).is_true()
+	assert_bool(absf(room.mobile_hud.audio_level("master") - 1.0) < 0.001).is_true()
+	assert_bool(absf(room.mobile_hud.audio_level("music") - 1.0) < 0.001).is_true()
+	assert_bool(absf(room.mobile_hud.audio_level("sfx") - 1.0) < 0.001).is_true()
+	_remove_settings_files(settings_path)
+
+
+func test_settings_back_priority_closes_audio_pause_then_bag() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	var back := InputEventKey.new()
+	back.keycode = KEY_ESCAPE
+	back.pressed = true
+
+	room.mobile_hud.open_pause()
+	room.mobile_hud.open_audio()
+	assert_bool(tree.paused).is_true()
+	assert_bool(room.mobile_hud.audio_open).is_true()
+	assert_bool(room.mobile_hud.handle_back_event(back)).is_true()
+	assert_bool(room.mobile_hud.audio_open).is_false()
+	assert_bool(room.mobile_hud.pause_open).is_true()
+	assert_bool(tree.paused).is_true()
+
+	assert_bool(room.mobile_hud.handle_back_event(back)).is_true()
+	assert_bool(room.mobile_hud.pause_open).is_false()
+	assert_bool(tree.paused).is_false()
+
+	room.mobile_hud.open_bag()
+	assert_bool(room.mobile_hud.bag_open).is_true()
+	assert_bool(room.mobile_hud.handle_back_event(back)).is_true()
+	assert_bool(room.mobile_hud.bag_open).is_false()
+	assert_bool(room.mobile_hud.pause_open).is_false()
+	assert_bool(room.mobile_hud.handle_back_event(back)).is_false()
+
+
+func test_settings_touch_pause_is_consumed_before_world_input() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.player.stop_walking()
+	var start := room.player.position
+	var pause_point := room.mobile_hud.pause_touch_point()
+
+	await _tap_control(room, pause_point)
+	assert_bool(room.mobile_hud.pause_open).is_true()
+	assert_bool(tree.paused).is_true()
+	assert_bool(room.player.position.distance_to(start) < 0.01).is_true()
+	assert_str(String(room.selected)).is_empty()
+
+	if room.mobile_hud.pause_open:
+		room.mobile_hud.resume_button.pressed.emit()
+	await tree.process_frame
+	for frame: int in range(12):
+		await tree.physics_frame
+	assert_bool(tree.paused).is_false()
+	assert_bool(room.player.position.distance_to(start) < 0.01).is_true()
+	assert_str(String(room.selected)).is_empty()
+
+
+func _tap_control(room: Prototype, point: Vector2) -> void:
+	var press := InputEventScreenTouch.new()
+	press.position = point
+	press.pressed = true
+	room.get_viewport().push_input(press, true)
+	await room.get_tree().process_frame
+	var release := InputEventScreenTouch.new()
+	release.position = point
+	release.pressed = false
+	room.get_viewport().push_input(release, true)
+	await room.get_tree().process_frame
+
+
+func _remove_settings_files(path: String) -> void:
+	for candidate: String in [path, path + ".tmp", path + ".bak"]:
+		if FileAccess.file_exists(candidate):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(candidate))
