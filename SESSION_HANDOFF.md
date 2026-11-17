@@ -102,7 +102,14 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 01
 
-SOHBET-01 | GdUnit4 ve başlangıç testi — hazır; çalışma sohbeti açılmadı.
+- **Durum:** `blocked` — GdUnit4 kurulmadı; kabul testleri çalıştırılamadı.
+- **Olay:** `tamu-topdown-sohbet01-blocked-20261117-183746z` · UTC `2026-11-17T18:37:46Z`.
+- **Başlangıç HEAD:** `63c418f7b9e05693ff53fc6c2f97783cbd0e61c0`.
+- **Yazılan yol:** `SESSION_HANDOFF.md` (`Rapor 01`); kod commit’i yok.
+- **GdUnit4:** [v6.1.3 lisansı](https://github.com/godot-gdunit-labs/gdUnit4/blob/v6.1.3/LICENSE) MIT olarak geri okundu. Godot 4.7.2 ile kabul edilmiş bir sürüm yok; v6.1.3 kurulmadı.
+- **Gerçek kontroller:** `command -v godot godot4` çıktı vermedi; Godot 4.7.2 resmî GitHub paketine `curl` erişimi DNS hatası (6) döndürdü. Bunlar ortam kontrolleridir, oyun testi değildir.
+- **Test sonucu:** Godot 4.7.2 headless açılış, hareket ve yan yana nesnelerden dokunulanı seçme: çalıştırılmadı. GitHub Actions ve Android: çalıştırılmadı. Yeni dal ya da PR açılmadı.
+- **Sonraki adım:** Godot 4.7.2 çalıştırıcısına erişim sağlanınca seçilen GdUnit4 dağıtımını doğrula; üç kabul testini çalıştır ve APK dışında kaldığını kanıtla. SOHBET-02 kabulü beklemeli.
 
 ### Rapor 02
 
