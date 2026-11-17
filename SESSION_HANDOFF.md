@@ -173,13 +173,14 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 07
 
-SOHBET-07 | Survival Core Lite — hazır. Rapor 06, `6235284` ve Actions 44174412794 üzerinde 22/22 ile kabul edildi.
-
-**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; yeni dal veya PR yok. HEAD, AGENTS.md, README.md ve mevcut `tamu-topdown-bootstrap` görevini oku. Kaynak `openclawaimac/godot-survival-core-lite`, doğrulanmış commit `c4dc0238ef80bfe2efc68b9e992bb00da57ddc0b`, kökte MIT `LICENSE`; yalnız `addons/survival_core/` içinden `DayNightClock` ve açlık/susuzluk mantığını al. Demo, envanter, tarif veya toplama kodu taşıma.
-
-**Hedef ve kapsam:** Saat ile `CanvasModulate` üzerinden shadersız gün/gece; HUD rengini değiştirme. Açlık/susuzluk bir kez ve öngörülebilir biçimde ilerlesin. Açlık/susuzluk kaynaklı hasarı mevcut oyuncu ClutteredCode `Health` bileşenine yönlendir; SurvivalStats içindeki ayrı can, yenilenme ve ölüm mekanizmasını paralel yürütme. Yalnız upstream çekirdek/lisans, survival adaptörü, gerekli oyuncu ve prototype sahne bağlantıları, ilgili testler ve mevcut CI test kapsamı. Yeni kayıt şeması, HUD, envanter veya üretim sistemi açma.
-
-**Kabul:** GitHub Actions’ta önceki 22 testi koru. Sabit adımlarla gün/gece geçişi ve tur sonu sarımı, açlık ve susuzluğun ilerlemesi, eşik altında mevcut Health’e hasarın bir kez uygulanması ve ölümün mevcut yoldan işlenmesi için deterministik testler ekle. Hata varsa logdan düzeltip yeniden çalıştır. Kod commit’ini, başarılı Actions sonucunu, kaynak ref/lisansı ve Android durumunu yalnız Rapor 07’ye yazıp GitHub’dan geri oku; yeni Beyin görevi açma.
+- **Durum:** `verified` — Survival Core Lite gün/gece ve ihtiyaç çekirdeği prototype'a bağlandı. Kod commit'i, başarılı Actions job'u ve ham günlükler geri okunarak doğrulandı; önceki 22 test korunarak GdUnit4 **26/26** geçti. Android cihaz/APK doğrulaması yapılmadı.
+- **Olay:** `tamu-topdown-sohbet07-ci-44175826940` · UTC `2026-11-17T21:04:13Z` (başarılı CI çalıştırmasının tamamlanma zamanı).
+- **Başlangıç HEAD:** `597cfd787f7bf4d888bad21c546dda8c407815e7`. **Test edilen final kod:** [`58ea467be94b5564857afae8a69d3f9df83dfb6a`](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/commit/58ea467be94b5564857afae8a69d3f9df83dfb6a).
+- **Upstream:** `openclawaimac/godot-survival-core-lite`, sabit commit [`c4dc0238ef80bfe2efc68b9e992bb00da57ddc0b`](https://github.com/openclawaimac/godot-survival-core-lite/tree/c4dc0238ef80bfe2efc68b9e992bb00da57ddc0b), MIT. Kök `LICENSE` korunarak `addons/survival_core/LICENSE` olarak taşındı. `DayNightClock` sabit kaynaktan aynı içerikle alındı; `SurvivalStats` yalnız açlık/susuzluğa indirgenerek ayrı can, yenilenme ve ölüm mekanizması kaldırıldı. Demo, envanter, tarif ve toplama kodu alınmadı.
+- **Bağlantı:** `CanvasModulate` ile shadersız dünya ışığı uygulanıyor; HUD ayrı `CanvasLayer` olarak korunuyor. `DayNightClock` ve `SurvivalStats` kendi otomatik tick'leri kapalıyken `TamuSurvivalAdapter` ikisini tek kez ilerletiyor. Açlık/susuzluk hasarı doğrudan mevcut `Player/Health` ClutteredCode `Health.damage()` yoluna gidiyor; ikinci can/ölüm sistemi yok ve ölüm mevcut `Health.died` yolundan işleniyor.
+- **Yollar:** `addons/survival_core/{day_night_clock.gd,survival_stats.gd,LICENSE}`, `scripts/survival_adapter.gd`, `scenes/prototype.tscn`, `tests/prototype_test.gd`, `.github/workflows/godot-tests.yml`. Kayıt şeması, HUD kontrolleri, envanter ve üretim değiştirilmedi; yeni dal/PR yok.
+- **GitHub Actions:** [run 44175826940](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/actions/runs/44175826940), job `134366766121`, `success`. Godot `4.7.2.stable.official.ed1daf0bf`; headless açılış geçti. GdUnit4: **26 test, 0 hata, 0 başarısız, 0 flaky, 0 skipped, 0 orphan**. Yeni dört kabul testi ham logda `PASSED`: sabit adımlı gün/gece + tur sarımı; açlık/susuzluk tek adım ilerlemesi; tükenmede mevcut Health'e tek hasar; ölümün mevcut Health yolundan işlenmesi.
+- **Rapor:** [SESSION_HANDOFF.md · Rapor 07](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/blob/main/SESSION_HANDOFF.md#rapor-07). Android cihaz ve APK doğrulaması bu çalışmada yapılmadı.
 
 ### Rapor 08
 
