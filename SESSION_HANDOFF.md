@@ -161,7 +161,15 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 06
 
-SOHBET-06 | CodingQuests State Machine — önceki kabulü bekliyor.
+SOHBET-06 | CodingQuests State Machine — hazır. Koordinatör Rapor 05’in kodunu ve Actions 44172454773 ham loglarını doğruladı: `008582d` üzerinde 17/17; sonrası yalnız rapor.
+
+**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`. HEAD, AGENTS.md, README.md, bu rapor ve mevcut `tamu-topdown-bootstrap` görevini doğrula. Dal/PR açma. Kaynak `CodingQuests/godot-state-machine`, sabit commit `7188bb0ce006f5ee10e4d921b6b34abf598355f5`. Doğrudan `state_machine/StateMachine.gd`, `state_machine/State.gd` ve kökteki MIT `LICENSE` dosyalarını kullan. Demo slime, görsel ve savaş kodu taşıma.
+
+**Hedef:** Pasif hayvan için bekle → gezin → kaç; mevcut savaş hedefini kullanan ilk düşman için gezin → takip → saldırı hazırlığı → saldırı → toparlanma. Saldırı yönü hazırlıkta okunur olsun; ölüm mevcut ClutteredCode Health sinyaliyle davranış ve saldırıyı durdursun. İkinci can/hasar sistemi ekleme. Durum hedeflerini ve geçişleri sahne açılışında doğrula; yanlış durumu sessizce yutma. Test sahnesini deterministik tut; oyun davranışı ile test kurulumunu ayır.
+
+**Sınır:** FSM çekirdeği ve lisansı, NPC davranış kodu, ilgili sahne/prototype ve mevcut savaş bileşenlerine gereken asgari bağlantılar, ilgili testler ve mevcut Godot workflow’unun test kapsamı. Envanter, kayıt, görev ve HUD şemasına dokunma.
+
+**Kabul:** GitHub Actions’ta önceki 17 testi koru; pasif hayvanın tehditten kaçmasını ve tehdit kalkınca gezinmeye dönmesini, düşmanın hazırlık olmadan hasar vermemesini ve toparlanma bitmeden yeni saldırı başlatmamasını, ölümün davranışı durdurmasını ve geçersiz geçişin reddedilmesini doğrula. Başarısızlıkta logdan düzeltip yeniden çalıştır. Kod commit’ini, başarılı Actions sonucunu ve upstream ref/lisansı yalnız Rapor 06’ya yaz; GitHub’dan geri oku. Android kanıtını ayrı tut; yeni Beyin görevi açma.
 
 ### Rapor 07
 
