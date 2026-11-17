@@ -1,7 +1,7 @@
 extends Node2D
 class_name TamuCombatTarget
 
-const REQUIRED_STATES := PackedStringArray(["Roam", "Chase", "Windup", "Attack", "Recover", "Dead"])
+var required_states: PackedStringArray = PackedStringArray(["Roam", "Chase", "Windup", "Attack", "Recover", "Dead"])
 const CHASE_RADIUS: float = 140.0
 const LEASH_RADIUS: float = 190.0
 const ATTACK_RANGE: float = 54.0
@@ -42,7 +42,7 @@ func _ready() -> void:
 	attack_hit_box.ignore_collisions = true
 	attack_hit_box.monitoring = false
 	assert(
-		state_machine.validate_state_names(REQUIRED_STATES),
+		state_machine.validate_state_names(required_states),
 		"Enemy FSM is missing a required state."
 	)
 	queue_redraw()

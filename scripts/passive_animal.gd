@@ -1,7 +1,7 @@
 extends Node2D
 class_name TamuPassiveAnimal
 
-const REQUIRED_STATES := PackedStringArray(["Idle", "Roam", "Flee"])
+var required_states: PackedStringArray = PackedStringArray(["Idle", "Roam", "Flee"])
 const IDLE_SECONDS: float = 0.12
 const ROAM_SPEED: float = 18.0
 const FLEE_SPEED: float = 72.0
@@ -18,7 +18,7 @@ var _roam_direction: Vector2 = Vector2.RIGHT
 
 func _ready() -> void:
 	assert(
-		state_machine.validate_state_names(REQUIRED_STATES),
+		state_machine.validate_state_names(required_states),
 		"Passive animal FSM is missing a required state."
 	)
 	queue_redraw()
