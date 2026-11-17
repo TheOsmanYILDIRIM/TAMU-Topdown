@@ -3,8 +3,15 @@ extends CharacterBody2D
 const SPEED: float = 150.0
 const BOUNDS := Rect2(42.0, 66.0, 556.0, 250.0)
 
+@onready var health: Health = $Health
+@onready var hurt_box: BasicHurtBox2D = $HurtBox
+
 var destination: Vector2
 var has_destination: bool = false
+
+
+func _ready() -> void:
+	hurt_box.health = health
 
 
 func walk_to(point: Vector2) -> void:

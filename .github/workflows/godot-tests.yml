@@ -41,7 +41,7 @@ jobs:
           pin=d18770221c2df4a3c991a42fdce7907df40eea75
           work="$RUNNER_TEMP/tamu-test"
           mkdir -p "$work/addons"
-          cp -R project.godot scenes scripts tests addons data save_system "$work/"
+          cp -R project.godot scenes scripts tests addons data save_system state_machine "$work/"
           rm "$work/tests/.gdignore"
           git init -q "$RUNNER_TEMP/gdunit-source"
           git -C "$RUNNER_TEMP/gdunit-source" fetch --quiet --depth=1 https://github.com/godot-gdunit-labs/gdUnit4.git "$pin"
@@ -50,7 +50,7 @@ jobs:
           git -C "$RUNNER_TEMP/gdunit-source" show FETCH_HEAD:LICENSE > "$work/addons/gdUnit4/LICENSE"
           grep -q '^MIT License' "$work/addons/gdUnit4/LICENSE"
 
-      - name: GdUnit4 movement, inventory, save, quest, and combat tests
+      - name: GdUnit4 movement, inventory, save, quest, combat, and state machine tests
         working-directory: ${{ runner.temp }}/tamu-test
         run: |
           godot --headless --path . --editor --import 2>&1 | tee "$RUNNER_TEMP/tamu-test-import.log"
@@ -81,11 +81,16 @@ jobs:
               "test_combat_miss_outside_range_does_not_damage",
               "test_combat_same_attack_cannot_damage_target_twice",
               "test_combat_death_signal_is_emitted_once",
+              "test_fsm_passive_animal_flees_and_returns_to_roam",
+              "test_fsm_enemy_windup_prevents_early_damage",
+              "test_fsm_enemy_recovery_blocks_next_attack",
+              "test_fsm_enemy_death_stops_behavior_and_attack",
+              "test_fsm_invalid_transition_is_rejected",
           }
           passed = {case.attrib.get("name") for case in cases if not any(case.find(x) is not None for x in ("failure", "error", "skipped"))}
           if not expected <= passed:
               raise SystemExit(f"Missing passing tests: {expected - passed}; recorded: {passed}")
-          print("Verified all seventeen required JUnit test cases passed.")
+          print("Verified all twenty-two required JUnit test cases passed.")
           PY
     defaults:
       run:

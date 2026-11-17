@@ -384,12 +384,174 @@ func test_combat_death_signal_is_emitted_once() -> void:
 	assert_int(room.combat_target.death_count).is_equal(1)
 
 
+
+func test_fsm_passive_animal_flees_and_returns_to_roam() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.set_ai_enabled(false)
+	var animal: TamuPassiveAnimal = room.passive_animal
+	await _wait_for_state(animal.state_machine, "Roam", tree, 30)
+
+	room.player.position = animal.position - Vector2(30.0, 0.0)
+	room.player.stop_walking()
+	var before_flee := animal.position
+	await _wait_for_state(animal.state_machine, "Flee", tree, 30)
+	for frame in range(6):
+		await tree.physics_frame
+	assert_bool(animal.position.x > before_flee.x).is_true()
+
+	room.player.position = Vector2(80.0, 100.0)
+	room.player.stop_walking()
+	await _wait_for_state(animal.state_machine, "Roam", tree, 30)
+
+
+func test_fsm_enemy_windup_prevents_early_damage() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	var enemy: TamuCombatTarget = room.combat_target
+	enemy.reset_for_test()
+	room.player.health.max = 12
+	room.player.health.current = 12
+	room.player.position = enemy.position - Vector2(42.0, 0.0)
+	room.player.stop_walking()
+	enemy.set_ai_enabled(true)
+
+	await _wait_for_state(enemy.state_machine, "Windup", tree, 30)
+	var locked_direction := enemy.attack_direction
+	var before_health := room.player.health.current
+	assert_bool(enemy.telegraph_active).is_true()
+	assert_bool(locked_direction.length() > 0.99).is_true()
+	for frame in range(4):
+		await tree.physics_frame
+	assert_str(String(enemy.current_state_name())).is_equal("Windup")
+	assert_int(room.player.health.current).is_equal(before_health)
+	assert_bool(enemy.attack_direction.is_equal_approx(locked_direction)).is_true()
+
+	for frame in range(40):
+		if room.player.health.current < before_health:
+			break
+		await tree.physics_frame
+	assert_int(room.player.health.current).is_equal(before_health - 2)
+	assert_int(enemy.damage_event_count).is_equal(1)
+
+
+func test_fsm_enemy_recovery_blocks_next_attack() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	var enemy: TamuCombatTarget = room.combat_target
+	enemy.reset_for_test()
+	room.player.health.max = 12
+	room.player.health.current = 12
+	room.player.position = enemy.position - Vector2(42.0, 0.0)
+	room.player.stop_walking()
+	enemy.set_ai_enabled(true)
+
+	await _wait_for_state(enemy.state_machine, "Recover", tree, 60)
+	var first_attack_count := enemy.attack_count
+	assert_int(first_attack_count).is_equal(1)
+	assert_bool(enemy.recovery_active).is_true()
+	for frame in range(8):
+		await tree.physics_frame
+	assert_str(String(enemy.current_state_name())).is_equal("Recover")
+	assert_int(enemy.attack_count).is_equal(first_attack_count)
+
+	await _wait_for_attack_count(enemy, 2, tree, 90)
+	assert_int(enemy.attack_count).is_equal(2)
+	assert_int(enemy.recover_count).is_greater_equal(1)
+
+
+func test_fsm_enemy_death_stops_behavior_and_attack() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	var enemy: TamuCombatTarget = room.combat_target
+	enemy.reset_for_test()
+	room.player.position = enemy.position - Vector2(42.0, 0.0)
+	room.player.stop_walking()
+	enemy.set_ai_enabled(true)
+	await _wait_for_state(enemy.state_machine, "Windup", tree, 30)
+
+	var death_position := enemy.position
+	var attacks_before_death := enemy.attack_count
+	enemy.health.kill()
+	await tree.physics_frame
+	assert_bool(enemy.health.is_dead()).is_true()
+	assert_int(enemy.death_count).is_equal(1)
+	assert_bool(enemy.behavior_stopped).is_true()
+	assert_str(String(enemy.current_state_name())).is_equal("Dead")
+	assert_bool(enemy.attack_hit_box.ignore_collisions).is_true()
+
+	for frame in range(20):
+		await tree.physics_frame
+	assert_bool(enemy.position.is_equal_approx(death_position)).is_true()
+	assert_int(enemy.attack_count).is_equal(attacks_before_death)
+
+
+func test_fsm_invalid_transition_is_rejected() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.set_ai_enabled(false)
+	var machine: StateMachine = room.passive_animal.state_machine
+	var rejection := {"count": 0, "requested": "", "reason": ""}
+	machine.transition_rejected.connect(
+		func(_from_state: String, requested: String, reason: String) -> void:
+			rejection["count"] = int(rejection["count"]) + 1
+			rejection["requested"] = requested
+			rejection["reason"] = reason
+	)
+	var before_state := String(machine.current_state.name)
+
+	assert_bool(machine.change_state("NotARealState")).is_false()
+	assert_str(String(machine.current_state.name)).is_equal(before_state)
+	assert_int(int(rejection["count"])).is_equal(1)
+	assert_str(String(rejection["requested"])).is_equal("NotARealState")
+	assert_str(String(rejection["reason"])).is_equal("missing_state")
+	assert_str(machine.last_rejection_reason).is_equal("missing_state")
+
+
 func _wait_for_attack_end(room: Prototype, tree: SceneTree) -> void:
 	for frame in range(60):
 		if not room.attack_active:
 			return
 		await tree.physics_frame
 	assert_bool(room.attack_active).is_false()
+
+
+
+func _wait_for_state(
+	machine: StateMachine,
+	expected_state: String,
+	tree: SceneTree,
+	max_frames: int
+) -> void:
+	for frame in range(max_frames):
+		if machine.current_state != null and String(machine.current_state.name) == expected_state:
+			return
+		await tree.physics_frame
+	var actual := "" if machine.current_state == null else String(machine.current_state.name)
+	assert_str(actual).is_equal(expected_state)
+
+
+func _wait_for_attack_count(
+	enemy: TamuCombatTarget,
+	expected_count: int,
+	tree: SceneTree,
+	max_frames: int
+) -> void:
+	for frame in range(max_frames):
+		if enemy.attack_count >= expected_count:
+			return
+		await tree.physics_frame
+	assert_int(enemy.attack_count).is_greater_equal(expected_count)
 
 
 func _assert_live_state_unchanged(

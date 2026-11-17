@@ -6,6 +6,7 @@ const TREE := Vector2(351.0, 207.0)
 const PICKUP := Vector2(440.0, 190.0)
 const PICKUP_TWO := Vector2(500.0, 190.0)
 const INTERACTION_DISTANCE: float = 65.0
+const PASSIVE_THREAT_DISTANCE: float = 72.0
 const ATTACK_WINDOW_SECONDS: float = 0.25
 const PlayerController = preload("res://scripts/player.gd")
 const InventoryBridge = preload("res://scripts/inventory_bridge.gd")
@@ -21,6 +22,7 @@ const SaveAdapter = preload("res://scripts/save_adapter.gd")
 @onready var save_button: Button = $HUD/Save
 @onready var load_button: Button = $HUD/Load
 @onready var combat_target: TamuCombatTarget = $CombatTarget
+@onready var passive_animal: TamuPassiveAnimal = $PassiveAnimal
 @onready var attack_hit_box: BasicHitBox2D = $Player/AttackHitBox
 @onready var attack_window: Timer = $AttackWindow
 
@@ -251,7 +253,17 @@ func _update_inventory_controls() -> void:
 	reward_button.disabled = not quest.is_completed() or quest.is_reward_claimed()
 
 
+func _update_passive_animal_threat() -> void:
+	if passive_animal == null:
+		return
+	if player.position.distance_to(passive_animal.position) <= PASSIVE_THREAT_DISTANCE:
+		passive_animal.set_threat(player.position)
+	else:
+		passive_animal.clear_threat()
+
+
 func _process(_delta: float) -> void:
+	_update_passive_animal_threat()
 	var label := "TAMU • Quest %d/%d" % [quest.progress(), quest.target()]
 	if quest.is_reward_claimed():
 		label += " • Reward claimed"
