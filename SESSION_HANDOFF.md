@@ -138,7 +138,15 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 04
 
-SOHBET-04 | Rubonnek Quest Manager — önceki kabulü bekliyor.
+SOHBET-04 | Rubonnek Quest Manager — hazır. Rapor 03 ve Actions 44165154825 bağımsız olarak doğrulandı.
+
+**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; dal veya PR açma. Başlangıçta HEAD, AGENTS.md, README.md, bu rapor ve mevcut `tamu-topdown-bootstrap` görevini doğrula. `Rubonnek/quest-manager` kaynak dalı `master`, sabit commit `8fe88bc8a415d0b57e32a11b6114518e6d62ff6d`; MIT lisansı `addons/rubonnek.quest_manager/LICENSE.md`. Bu ref ve yolu doğrudan kullan. Gereken çekirdeği ve lisansı al; demo içeriği veya ayrı diyalog/HUD sistemi ekleme.
+
+**Hedef:** Tek odada alınabilen, ilerleyen ve ödülü alınabilen bir görev oluştur. Sabit TAMU görev/hedef ve eşya kimlikleri kullan. Yalnız gerçekten envantere eklenen toplama miktarı hedefi ilerletsin; başarısız toplama ve sandık aktarımları sayılmasın. Görev ilerlemesi ve ödülün verildiği bilgisi aynı sürümlü `state.json` içinde saklansın. Önceki geçerli kayıtlar yüklenebilsin; yeni alanların doğrulaması canlı durum değiştirilmeden bitsin. Dolu çantada verilemeyen ödül alınmış sayılmasın ve kısmen verilmesin.
+
+**Yazma kapsamı:** Quest Manager çekirdek dosyaları/lisansı, göreve özgü veri ve adaptör, gerekli entegrasyon noktaları (`scripts/save_adapter.gd`, `scripts/inventory_bridge.gd`, `scripts/prototype.gd`, `scenes/prototype.tscn`, gerekirse `project.godot`), ilgili testler ve mevcut Godot Actions workflow’u. Savaş veya sonraki entegrasyonlara dokunma.
+
+**Kabul ve teslim:** Önceki sekiz testi koru. GitHub Actions’ta en az yarım görevin kaydet/yükle sonrası sürmesi, başarısız toplamanın sayılmaması ve verilmiş ödülün yüklemeden sonra ikinci kez verilememesi testlerini çalıştır. Başarısız CI varsa logdan düzelt ve yeniden doğrula. Kod commit’ini ve ilgili başarılı Actions sonucunu geri oku. Teslimi yalnız `SESSION_HANDOFF.md#rapor-04` bölümüne yaz ve geri oku; Android doğrulamasını ayrı tut, mükerrer Avenox görevi açma.
 
 ### Rapor 05
 
