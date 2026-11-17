@@ -195,7 +195,15 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 09
 
-SOHBET-09 | Gohud — önceki kabulü bekliyor.
+SOHBET-09 | Gohud — hazır. Rapor 08’in `973c7e1` kodu ve Actions 44177747957 ham günlükleri bağımsız doğrulandı: 29/29; sonrasındaki değişiklik yalnız rapor.
+
+**Brif:** Her mesajına `[SOHBET-09 | Gohud]` ile başla. Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; dal veya PR açma. Güncel HEAD, AGENTS.md, README.md, bu dosya ve mevcut `tamu-topdown-bootstrap` görevini doğrula. Kaynak `thruthesky/gohud` v1.3.0, sabit commit `5d48e694d572625dcd3a7d22bd2a2357c6b78c32`, kökte MIT `LICENSE`. Doğrudan `widgets/go_slot.gd`, `widgets/go_slot_grid.gd` ve `skills/gohud/references/hud.md` ile başla. Gerekli HUD bileşenleri ve transitif bağımlılıklarını lisansla al; demo, ek tema/görsel, joystick, blur ve ayrı menü sistemi ekleme.
+
+**Hedef:** Dokunmatik hızlı erişim çubuğu ve açılıp kapanan çanta paneli; mevcut menzildeki seçili sandıkta aktarım çalışmaya devam etsin. Gohud yalnız görünüm ve girdi katmanı; Rubonnek tek envanter kaynağı, panelde ikinci yığın veya kayıt durumu tutulmaz. Miktarlar aktarım ve yüklemeden sonra güncel kalır. Arayüz dokunuşu dünyaya sızmasın, HUD dışında hareket ve seçim korunsun. Güvenli alanı gözet; Android geri olayı açık çantayı önce kapatsın, kapalıyken mevcut davranışa müdahale etmesin.
+
+**Kapsam:** Gerekli Gohud dosyaları, HUD sahnesi/adaptörü, prototype bağlantıları, gerekirse salt okunur envanter görünümü, ilgili testler ve mevcut Godot Actions test kapsamı. Envanter/aktarım kurallarını, kayıt şemasını veya savaş ve survival davranışlarını değiştirme. Settings + Menus ve mini harita sonraki raporlara ait.
+
+**Kabul:** Önceki 29 testi koru. GitHub Actions’ta gerçek envanterle görüntülenen miktarların eşleşmesini ve aktarım/yüklemede güncellenmesini; HUD dokunuşunun hareket/seçime dönüşmemesini ve geri olayının önce çantayı kapatmasını doğrula. Mümkünse enjekte edilen güvenli alan ile dar/geniş ekran yerleşimini headless test et. Gerçek cihaz görsel/dokunmatik kontrolünü headless sonuçtan ayrı tut. Hata varsa logdan düzelt ve yeniden çalıştır. Kod commit’ini, başarılı Actions sonucunu ve kaynak ref/lisansını yalnız Rapor 09’a yaz ve geri oku; yeni Beyin görevi açma.
 
 ### Rapor 10
 
