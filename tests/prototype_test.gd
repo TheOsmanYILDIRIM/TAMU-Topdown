@@ -518,6 +518,105 @@ func test_fsm_invalid_transition_is_rejected() -> void:
 	assert_str(machine.last_rejection_reason).is_equal("missing_state")
 
 
+
+func test_survival_day_night_fixed_steps_and_wrap() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	var survival := room.get_node("SurvivalAdapter") as TamuSurvivalAdapter
+	var clock := room.get_node("DayNightClock") as DayNightClock
+	var tint := room.get_node("WorldTint") as CanvasModulate
+	survival.auto_tick = false
+	clock.day_length_sec = 100.0
+	clock.time_of_day = 0.69
+	clock.day = 4
+	clock.phase = DayNightClock.phase_for(clock.time_of_day)
+
+	survival.tick(2.0)
+	assert_bool(absf(clock.time_of_day - 0.71) < 0.0001).is_true()
+	assert_str(String(clock.phase)).is_equal("dusk")
+	assert_bool(absf(tint.color.r - clock.light_level()) < 0.0001).is_true()
+
+	clock.time_of_day = 0.95
+	clock.phase = DayNightClock.phase_for(clock.time_of_day)
+	survival.tick(10.0)
+	assert_bool(absf(clock.time_of_day - 0.05) < 0.0001).is_true()
+	assert_int(clock.day).is_equal(5)
+	assert_str(String(clock.phase)).is_equal("night")
+
+
+func test_survival_hunger_and_thirst_progress_once_per_step() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	var survival := room.get_node("SurvivalAdapter") as TamuSurvivalAdapter
+	var stats := room.get_node("SurvivalStats") as SurvivalStats
+	survival.auto_tick = false
+	stats.hunger = 80.0
+	stats.thirst = 90.0
+	stats.hunger_per_sec = 0.5
+	stats.thirst_per_sec = 0.8
+
+	survival.tick(10.0)
+	assert_bool(absf(stats.hunger - 75.0) < 0.0001).is_true()
+	assert_bool(absf(stats.thirst - 82.0) < 0.0001).is_true()
+
+
+func test_survival_deprivation_damages_existing_health_once() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	var survival := room.get_node("SurvivalAdapter") as TamuSurvivalAdapter
+	var stats := room.get_node("SurvivalStats") as SurvivalStats
+	survival.auto_tick = false
+	survival.damage_interval_sec = 1.0
+	survival.damage_per_deprived_need = 2
+	stats.hunger = 0.0
+	stats.thirst = 50.0
+	stats.hunger_per_sec = 0.5
+	stats.thirst_per_sec = 0.8
+	room.player.health.max = 12
+	room.player.health.current = 12
+	var events := {"damaged": 0}
+	room.player.health.damaged.connect(
+		func(_entity: Node, _type: HealthActionType.Enum, _amount: int, _incrementer: int, _multiplier: float, _applied: int) -> void:
+			events["damaged"] = int(events["damaged"]) + 1
+	)
+
+	survival.tick(1.0)
+	assert_int(room.player.health.current).is_equal(10)
+	assert_int(int(events["damaged"])).is_equal(1)
+
+
+func test_survival_death_uses_existing_health_path() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	var survival := room.get_node("SurvivalAdapter") as TamuSurvivalAdapter
+	var stats := room.get_node("SurvivalStats") as SurvivalStats
+	survival.auto_tick = false
+	survival.damage_interval_sec = 1.0
+	survival.damage_per_deprived_need = 2
+	stats.hunger = 0.0
+	stats.thirst = 100.0
+	room.player.health.current = 2
+	var events := {"died": 0}
+	room.player.health.died.connect(
+		func(_entity: Node) -> void:
+			events["died"] = int(events["died"]) + 1
+	)
+
+	survival.tick(1.0)
+	assert_bool(room.player.health.is_dead()).is_true()
+	assert_int(int(events["died"])).is_equal(1)
+	survival.tick(1.0)
+	assert_int(int(events["died"])).is_equal(1)
+
+
 func _wait_for_attack_end(room: Prototype, tree: SceneTree) -> void:
 	for frame in range(60):
 		if not room.attack_active:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://scripts/prototype.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/player.gd" id="2"]
@@ -9,6 +9,9 @@
 [ext_resource type="Script" path="res://state_machine/StateMachine.gd" id="7"]
 [ext_resource type="Script" path="res://scripts/behavior_state.gd" id="8"]
 [ext_resource type="Script" path="res://scripts/passive_animal.gd" id="9"]
+[ext_resource type="Script" path="res://addons/survival_core/day_night_clock.gd" id="10"]
+[ext_resource type="Script" path="res://addons/survival_core/survival_stats.gd" id="11"]
+[ext_resource type="Script" path="res://scripts/survival_adapter.gd" id="12"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_attack"]
 radius = 24.0
@@ -127,6 +130,19 @@ script = ExtResource("8")
 [node name="AttackWindow" type="Timer" parent="."]
 wait_time = 0.25
 one_shot = true
+
+[node name="WorldTint" type="CanvasModulate" parent="."]
+
+[node name="DayNightClock" type="Node" parent="."]
+script = ExtResource("10")
+auto_tick = false
+
+[node name="SurvivalStats" type="Node" parent="."]
+script = ExtResource("11")
+auto_tick = false
+
+[node name="SurvivalAdapter" type="Node" parent="."]
+script = ExtResource("12")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
