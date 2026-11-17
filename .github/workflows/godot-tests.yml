@@ -45,10 +45,10 @@ jobs:
           rm "$work/tests/.gdignore"
           git init -q "$RUNNER_TEMP/gdunit-source"
           git -C "$RUNNER_TEMP/gdunit-source" fetch --quiet --depth=1 https://github.com/godot-gdunit-labs/gdUnit4.git "$pin"
-          git -C "$RUNNER_TEMP/gdunit-source" archive FETCH_HEAD LICENSE addons/gdUnit4 | tar -x -C "$work"
+          git -C "$RUNNER_TEMP/gdunit-source" archive FETCH_HEAD addons/gdUnit4 | tar -x -C "$work"
           grep -q '^version="6.2.0"$' "$work/addons/gdUnit4/plugin.cfg"
-          grep -q '^MIT License' "$work/LICENSE"
-          mv "$work/LICENSE" "$work/addons/gdUnit4/LICENSE"
+          git -C "$RUNNER_TEMP/gdunit-source" show FETCH_HEAD:LICENSE > "$work/addons/gdUnit4/LICENSE"
+          grep -q '^MIT License' "$work/addons/gdUnit4/LICENSE"
 
       - name: GdUnit4 movement and touch-selection tests
         working-directory: ${{ runner.temp }}/tamu-test
