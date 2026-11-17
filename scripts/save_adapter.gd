@@ -3,12 +3,15 @@ class_name TamuSaveAdapter
 
 const PLAYER_STABLE_ID := "player:main"
 const WORLD_PICKUP_STABLE_ID := "world:prototype:wood_log_pickup"
+const WORLD_PICKUP_TWO_STABLE_ID := "world:prototype:wood_log_pickup_two"
 
 
 static func capture(
 	player_position: Vector2,
 	inventory: TamuInventoryBridge,
-	pickup_taken: bool
+	pickup_taken: bool,
+	pickup_two_taken: bool,
+	quests: TamuQuestBridge
 ) -> Dictionary:
 	return {
 		"player": {
@@ -17,16 +20,17 @@ static func capture(
 		},
 		"inventories": inventory.snapshot_all(),
 		"world": {
-			WORLD_PICKUP_STABLE_ID: {
-				"taken": pickup_taken,
-			},
+			WORLD_PICKUP_STABLE_ID: {"taken": pickup_taken},
+			WORLD_PICKUP_TWO_STABLE_ID: {"taken": pickup_two_taken},
 		},
+		"quests": quests.snapshot_all(),
 	}
 
 
 static func decode(
 	state: Dictionary,
 	inventory: TamuInventoryBridge,
+	quests: TamuQuestBridge,
 	player_bounds: Rect2
 ) -> Dictionary:
 	var player_value: Variant = state.get("player", null)
@@ -66,12 +70,37 @@ static func decode(
 	if typeof(taken_value) != TYPE_BOOL:
 		return _failure(ERR_INVALID_DATA)
 
+	var pickup_two_taken := false
+	if world.has(WORLD_PICKUP_TWO_STABLE_ID):
+		var pickup_two_value: Variant = world.get(WORLD_PICKUP_TWO_STABLE_ID)
+		if typeof(pickup_two_value) != TYPE_DICTIONARY:
+			return _failure(ERR_INVALID_DATA)
+		var pickup_two := pickup_two_value as Dictionary
+		var pickup_two_taken_value: Variant = pickup_two.get("taken", null)
+		if typeof(pickup_two_taken_value) != TYPE_BOOL:
+			return _failure(ERR_INVALID_DATA)
+		pickup_two_taken = bool(pickup_two_taken_value)
+
+	var quest_snapshot: Dictionary
+	if state.has("quests"):
+		var quests_value: Variant = state.get("quests", null)
+		if typeof(quests_value) != TYPE_DICTIONARY:
+			return _failure(ERR_INVALID_DATA)
+		quest_snapshot = (quests_value as Dictionary).duplicate(true)
+		var quest_err := quests.validate_snapshot_all(quest_snapshot)
+		if quest_err != OK:
+			return _failure(quest_err)
+	else:
+		quest_snapshot = quests.default_snapshot()
+
 	return {
 		"ok": true,
 		"err": OK,
 		"player_position": player_position,
 		"inventories": inventories.duplicate(true),
 		"pickup_taken": bool(taken_value),
+		"pickup_two_taken": pickup_two_taken,
+		"quests": quest_snapshot,
 	}
 
 
@@ -81,7 +110,4 @@ static func _is_number(value: Variant) -> bool:
 
 
 static func _failure(err: Error) -> Dictionary:
-	return {
-		"ok": false,
-		"err": err,
-	}
+	return {"ok": false, "err": err}

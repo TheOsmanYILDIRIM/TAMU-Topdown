@@ -1,0 +1,14 @@
+{
+  "id": "quest:prototype:gather_wood",
+  "title": "Gather wood",
+  "description": "Collect two wood logs in the prototype room.",
+  "objective": {
+    "id": "objective:prototype:gather_wood",
+    "item_id": "core:wood_log",
+    "target": 2
+  },
+  "reward": {
+    "item_id": "core:wood_log",
+    "amount": 2
+  }
+}

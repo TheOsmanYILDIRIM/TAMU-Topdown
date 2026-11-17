@@ -81,6 +81,41 @@ func transfer(source: InventoryManager, target: InventoryManager, amount: int) -
 	return move_amount
 
 
+func bag_remaining_capacity() -> int:
+	return bag.get_remaining_capacity_for_item(WOOD_LOG_PLUGIN_ID)
+
+
+func add_to_bag(amount: int) -> int:
+	if amount <= 0:
+		return 0
+	var before := count(bag)
+	var excess: ExcessItems = bag.add(
+		WOOD_LOG_PLUGIN_ID, amount, null, -1, false
+	)
+	var added := count(bag) - before
+	if excess != null:
+		assert(excess.get_amount() == amount - added, "Inventory add result is inconsistent.")
+	return added
+
+
+func add_to_bag_atomic(amount: int) -> int:
+	if amount <= 0 or bag_remaining_capacity() < amount:
+		return 0
+	var before := count(bag)
+	var excess: ExcessItems = bag.add(
+		WOOD_LOG_PLUGIN_ID, amount, null, -1, false
+	)
+	if excess != null and excess.get_amount() > 0:
+		var inserted := count(bag) - before
+		if inserted > 0:
+			var rollback: ExcessItems = bag.remove(
+				WOOD_LOG_PLUGIN_ID, inserted, null, -1, false
+			)
+			assert(rollback == null or rollback.get_amount() == 0, "Atomic bag rollback failed.")
+		return 0
+	return amount
+
+
 func bag_to_chest(amount: int = 1) -> int:
 	return transfer(bag, chest, amount)
 

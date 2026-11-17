@@ -4,6 +4,7 @@ const PROTOTYPE: PackedScene = preload("res://scenes/prototype.tscn")
 const Prototype = preload("res://scripts/prototype.gd")
 const PlayerController = preload("res://scripts/player.gd")
 const InventoryBridge = preload("res://scripts/inventory_bridge.gd")
+const SaveAdapter = preload("res://scripts/save_adapter.gd")
 
 
 func test_floor_touch_moves_player() -> void:
@@ -174,6 +175,144 @@ func test_corrupt_or_unsupported_save_does_not_mutate_live_state() -> void:
 	var unsupported_result := room.load_game(slot_id)
 	assert_bool(bool(unsupported_result.get("ok", true))).is_false()
 	_assert_live_state_unchanged(room, live_position, 4, 6, true)
+	assert_int(SaveManager.delete_slot(slot_id)).is_equal(OK)
+
+
+func test_partial_quest_progress_survives_save_and_load() -> void:
+	var slot_id := 9401
+	SaveManager.delete_slot(slot_id)
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	room.player.position = Prototype.PICKUP
+	room.select_at(Prototype.PICKUP)
+	assert_bool(room.take_selected_pickup()).is_true()
+	assert_int(room.quest.progress()).is_equal(1)
+	assert_bool(room.quest.is_completed()).is_false()
+	assert_bool(room.quest.is_reward_claimed()).is_false()
+	assert_int(room.save_game(slot_id)).is_equal(OK)
+
+	assert_int(room.quest.record_collection(InventoryBridge.WOOD_LOG_STABLE_ID, 1)).is_equal(1)
+	assert_bool(room.quest.is_completed()).is_true()
+
+	var loaded := room.load_game(slot_id)
+	assert_bool(bool(loaded.get("ok", false))).is_true()
+	assert_int(room.quest.progress()).is_equal(1)
+	assert_bool(room.quest.is_completed()).is_false()
+	assert_bool(room.quest.is_reward_claimed()).is_false()
+	assert_bool(room.pickup_taken).is_true()
+	assert_bool(room.pickup_two_taken).is_false()
+
+	room.player.position = Prototype.PICKUP_TWO
+	room.select_at(Prototype.PICKUP_TWO)
+	assert_bool(room.take_selected_pickup()).is_true()
+	assert_int(room.quest.progress()).is_equal(2)
+	assert_bool(room.quest.is_completed()).is_true()
+	assert_int(SaveManager.delete_slot(slot_id)).is_equal(OK)
+
+
+func test_failed_collection_does_not_advance_quest() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.inventory.bag.clear()
+	_add(room.inventory.bag, 396)
+	room.player.position = Prototype.PICKUP
+	room.select_at(Prototype.PICKUP)
+
+	assert_bool(room.take_selected_pickup()).is_false()
+	assert_int(room.inventory.count(room.inventory.bag)).is_equal(396)
+	assert_int(room.quest.progress()).is_equal(0)
+	assert_bool(room.pickup_taken).is_false()
+
+
+func test_claimed_reward_is_not_granted_twice_after_load() -> void:
+	var slot_id := 9402
+	SaveManager.delete_slot(slot_id)
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	room.player.position = Prototype.PICKUP
+	room.select_at(Prototype.PICKUP)
+	assert_bool(room.take_selected_pickup()).is_true()
+	room.player.position = Prototype.PICKUP_TWO
+	room.select_at(Prototype.PICKUP_TWO)
+	assert_bool(room.take_selected_pickup()).is_true()
+	assert_bool(room.quest.is_completed()).is_true()
+
+	var before_reward := room.inventory.count(room.inventory.bag)
+	assert_int(room.claim_quest_reward()).is_equal(room.quest.reward_amount())
+	assert_int(room.inventory.count(room.inventory.bag)).is_equal(before_reward + room.quest.reward_amount())
+	assert_bool(room.quest.is_reward_claimed()).is_true()
+	assert_int(room.save_game(slot_id)).is_equal(OK)
+
+	var restored: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	_attach_to_test_viewport(restored, tree)
+	await tree.process_frame
+	var loaded := restored.load_game(slot_id)
+	assert_bool(bool(loaded.get("ok", false))).is_true()
+	assert_bool(restored.quest.is_completed()).is_true()
+	assert_bool(restored.quest.is_reward_claimed()).is_true()
+	var loaded_count := restored.inventory.count(restored.inventory.bag)
+	assert_int(restored.claim_quest_reward()).is_equal(0)
+	assert_int(restored.inventory.count(restored.inventory.bag)).is_equal(loaded_count)
+	assert_int(SaveManager.delete_slot(slot_id)).is_equal(OK)
+
+
+func test_full_bag_reward_is_atomic_and_remains_unclaimed() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	room.player.position = Prototype.PICKUP
+	room.select_at(Prototype.PICKUP)
+	assert_bool(room.take_selected_pickup()).is_true()
+	room.player.position = Prototype.PICKUP_TWO
+	room.select_at(Prototype.PICKUP_TWO)
+	assert_bool(room.take_selected_pickup()).is_true()
+	var current := room.inventory.count(room.inventory.bag)
+	_add(room.inventory.bag, 396 - current)
+
+	assert_int(room.claim_quest_reward()).is_equal(0)
+	assert_int(room.inventory.count(room.inventory.bag)).is_equal(396)
+	assert_bool(room.quest.is_reward_claimed()).is_false()
+
+
+func test_legacy_save_without_quest_fields_loads_default_quest_state() -> void:
+	var slot_id := 9403
+	SaveManager.delete_slot(slot_id)
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	var legacy_state := SaveAdapter.capture(
+		room.player.position,
+		room.inventory,
+		room.pickup_taken,
+		room.pickup_two_taken,
+		room.quest
+	)
+	legacy_state.erase("quests")
+	var legacy_world := legacy_state.get("world", {}) as Dictionary
+	legacy_world.erase(SaveAdapter.WORLD_PICKUP_TWO_STABLE_ID)
+	assert_int(SaveManager.save_slot(slot_id, legacy_state, "Legacy prototype room")).is_equal(OK)
+
+	assert_int(room.quest.record_collection(InventoryBridge.WOOD_LOG_STABLE_ID, 1)).is_equal(1)
+	room.pickup_two_taken = true
+
+	var loaded := room.load_game(slot_id)
+	assert_bool(bool(loaded.get("ok", false))).is_true()
+	assert_int(room.quest.progress()).is_equal(0)
+	assert_bool(room.quest.is_completed()).is_false()
+	assert_bool(room.quest.is_reward_claimed()).is_false()
+	assert_bool(room.pickup_two_taken).is_false()
 	assert_int(SaveManager.delete_slot(slot_id)).is_equal(OK)
 
 
