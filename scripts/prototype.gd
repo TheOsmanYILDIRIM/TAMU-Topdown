@@ -6,6 +6,7 @@ const TREE := Vector2(351.0, 207.0)
 const PICKUP := Vector2(440.0, 190.0)
 const PICKUP_TWO := Vector2(500.0, 190.0)
 const INTERACTION_DISTANCE: float = 65.0
+const ATTACK_WINDOW_SECONDS: float = 0.25
 const PlayerController = preload("res://scripts/player.gd")
 const InventoryBridge = preload("res://scripts/inventory_bridge.gd")
 const QuestBridge = preload("res://scripts/quest_bridge.gd")
@@ -19,12 +20,16 @@ const SaveAdapter = preload("res://scripts/save_adapter.gd")
 @onready var reward_button: Button = $HUD/ClaimReward
 @onready var save_button: Button = $HUD/Save
 @onready var load_button: Button = $HUD/Load
+@onready var combat_target: TamuCombatTarget = $CombatTarget
+@onready var attack_hit_box: BasicHitBox2D = $Player/AttackHitBox
+@onready var attack_window: Timer = $AttackWindow
 
 var selected: StringName = &""
 var inventory: TamuInventoryBridge
 var quest: TamuQuestBridge
 var pickup_taken: bool = false
 var pickup_two_taken: bool = false
+var attack_active: bool = false
 
 
 func _ready() -> void:
@@ -40,10 +45,20 @@ func _ready() -> void:
 	reward_button.pressed.connect(_on_claim_reward_pressed)
 	save_button.pressed.connect(_on_save_pressed)
 	load_button.pressed.connect(_on_load_pressed)
+	attack_hit_box.hurt_box_entered.connect(_on_attack_hurt_box_entered)
+	attack_window.timeout.connect(_on_attack_window_timeout)
+	attack_window.wait_time = ATTACK_WINDOW_SECONDS
+	attack_hit_box.monitoring = false
+	attack_hit_box.ignore_collisions = true
 	_update_inventory_controls()
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SPACE:
+		perform_attack()
+		get_viewport().set_input_as_handled()
+		return
+
 	var point: Vector2
 	if event is InputEventScreenTouch and event.pressed:
 		point = event.position
@@ -75,6 +90,27 @@ func select_at(point: Vector2) -> void:
 	player.stop_walking()
 	_update_inventory_controls()
 	queue_redraw()
+
+
+func perform_attack() -> bool:
+	if attack_active:
+		return false
+	attack_active = true
+	attack_hit_box.ignore_collisions = false
+	attack_hit_box.monitoring = true
+	attack_window.start()
+	return true
+
+
+func _on_attack_hurt_box_entered(_hurt_box: HurtBox2D) -> void:
+	if attack_active:
+		attack_hit_box.ignore_collisions = true
+
+
+func _on_attack_window_timeout() -> void:
+	attack_hit_box.monitoring = false
+	attack_hit_box.ignore_collisions = true
+	attack_active = false
 
 
 func _target_for_selected() -> Vector2:

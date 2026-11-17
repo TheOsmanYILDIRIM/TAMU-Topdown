@@ -50,7 +50,7 @@ jobs:
           git -C "$RUNNER_TEMP/gdunit-source" show FETCH_HEAD:LICENSE > "$work/addons/gdUnit4/LICENSE"
           grep -q '^MIT License' "$work/addons/gdUnit4/LICENSE"
 
-      - name: GdUnit4 movement, inventory, save, and quest tests
+      - name: GdUnit4 movement, inventory, save, quest, and combat tests
         working-directory: ${{ runner.temp }}/tamu-test
         run: |
           godot --headless --path . --editor --import 2>&1 | tee "$RUNNER_TEMP/tamu-test-import.log"
@@ -77,11 +77,15 @@ jobs:
               "test_claimed_reward_is_not_granted_twice_after_load",
               "test_full_bag_reward_is_atomic_and_remains_unclaimed",
               "test_legacy_save_without_quest_fields_loads_default_quest_state",
+              "test_combat_hit_uses_real_2d_collision",
+              "test_combat_miss_outside_range_does_not_damage",
+              "test_combat_same_attack_cannot_damage_target_twice",
+              "test_combat_death_signal_is_emitted_once",
           }
           passed = {case.attrib.get("name") for case in cases if not any(case.find(x) is not None for x in ("failure", "error", "skipped"))}
           if not expected <= passed:
               raise SystemExit(f"Missing passing tests: {expected - passed}; recorded: {passed}")
-          print("Verified all thirteen required JUnit test cases passed.")
+          print("Verified all seventeen required JUnit test cases passed.")
           PY
     defaults:
       run:

@@ -316,6 +316,82 @@ func test_legacy_save_without_quest_fields_loads_default_quest_state() -> void:
 	assert_int(SaveManager.delete_slot(slot_id)).is_equal(OK)
 
 
+func test_combat_hit_uses_real_2d_collision() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.reset_for_test()
+	room.player.position = room.combat_target.position - Vector2(45.0, 0.0)
+
+	assert_bool(room.perform_attack()).is_true()
+	await _wait_for_attack_end(room, tree)
+	assert_int(room.combat_target.health.current).is_equal(3)
+
+
+func test_combat_miss_outside_range_does_not_damage() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.reset_for_test()
+	room.player.position = room.combat_target.position - Vector2(120.0, 0.0)
+
+	assert_bool(room.perform_attack()).is_true()
+	await _wait_for_attack_end(room, tree)
+	assert_int(room.combat_target.health.current).is_equal(6)
+	assert_int(room.combat_target.death_count).is_equal(0)
+
+
+func test_combat_same_attack_cannot_damage_target_twice() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.reset_for_test()
+	room.player.position = room.combat_target.position - Vector2(45.0, 0.0)
+	var target_position := room.combat_target.position
+
+	assert_bool(room.perform_attack()).is_true()
+	for frame in range(6):
+		if room.combat_target.health.current < 6:
+			break
+		await tree.physics_frame
+	assert_int(room.combat_target.health.current).is_equal(3)
+
+	room.combat_target.position = target_position + Vector2(120.0, 0.0)
+	await tree.physics_frame
+	room.combat_target.position = target_position
+	await tree.physics_frame
+	await tree.physics_frame
+	assert_int(room.combat_target.health.current).is_equal(3)
+	await _wait_for_attack_end(room, tree)
+
+
+func test_combat_death_signal_is_emitted_once() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.reset_for_test()
+	room.player.position = room.combat_target.position - Vector2(45.0, 0.0)
+
+	for attack_index in range(3):
+		assert_bool(room.perform_attack()).is_true()
+		await _wait_for_attack_end(room, tree)
+
+	assert_int(room.combat_target.health.current).is_equal(0)
+	assert_int(room.combat_target.death_count).is_equal(1)
+
+
+func _wait_for_attack_end(room: Prototype, tree: SceneTree) -> void:
+	for frame in range(60):
+		if not room.attack_active:
+			return
+		await tree.physics_frame
+	assert_bool(room.attack_active).is_false()
+
+
 func _assert_live_state_unchanged(
 	room: Prototype,
 	expected_position: Vector2,

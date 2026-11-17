@@ -1,7 +1,17 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/prototype.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/player.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/combat_target.gd" id="3"]
+[ext_resource type="Script" path="res://addons/health_hitbox_hurtbox/health/health.gd" id="4"]
+[ext_resource type="Script" path="res://addons/health_hitbox_hurtbox/2d/hurt_box_2d/basic_hurt_box_2d.gd" id="5"]
+[ext_resource type="Script" path="res://addons/health_hitbox_hurtbox/2d/hit_box_2d/basic_hit_box_2d.gd" id="6"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_attack"]
+radius = 24.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_target"]
+radius = 12.0
 
 [node name="Prototype" type="Node2D"]
 script = ExtResource("1")
@@ -10,6 +20,40 @@ script = ExtResource("1")
 position = Vector2(120, 194)
 motion_mode = 1
 script = ExtResource("2")
+
+[node name="AttackHitBox" type="Area2D" parent="Player"]
+position = Vector2(30, 0)
+collision_layer = 0
+collision_mask = 2
+monitoring = false
+monitorable = false
+script = ExtResource("6")
+amount = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player/AttackHitBox"]
+shape = SubResource("CircleShape2D_attack")
+
+[node name="CombatTarget" type="Node2D" parent="."]
+position = Vector2(210, 194)
+script = ExtResource("3")
+
+[node name="Health" type="Node" parent="CombatTarget"]
+script = ExtResource("4")
+current = 6
+max = 6
+
+[node name="HurtBox" type="Area2D" parent="CombatTarget"]
+collision_layer = 2
+collision_mask = 0
+monitoring = false
+script = ExtResource("5")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CombatTarget/HurtBox"]
+shape = SubResource("CircleShape2D_target")
+
+[node name="AttackWindow" type="Timer" parent="."]
+wait_time = 0.25
+one_shot = true
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
