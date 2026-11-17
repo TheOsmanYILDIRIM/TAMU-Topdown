@@ -161,7 +161,7 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 06
 
-- **Durum:** `verified` — CodingQuests State Machine çekirdeği pasif hayvan ve mevcut ClutteredCode savaş hedefinin davranışlarına bağlandı. Final kod commit’i, başarılı Actions job’u ve ham günlükler geri okunarak doğrulandı; önceki 17 test korunarak GdUnit4 **22/22** geçti. Android cihaz/APK doğrulaması yapılmadı; SOHBET-07 koordinatör kabulünden sonra açılabilir.
+- **Durum:** `verified` — CodingQuests State Machine çekirdeği pasif hayvan ve mevcut ClutteredCode savaş hedefinin davranışlarına bağlandı. Final kod commit’i, başarılı Actions job’u ve ham günlükler geri okunarak doğrulandı; önceki 17 test korunarak GdUnit4 **22/22** geçti. Android cihaz/APK doğrulaması yapılmadı; SOHBET-07 açılabilir; koordinatör commit ve ham CI günlüklerini bağımsız doğruladı.
 - **Olay:** `tamu-topdown-sohbet06-ci-44174412794` · UTC `2026-11-17T20:56:01Z` (başarılı CI çalıştırmasının güncellenme/tamamlanma zamanı).
 - **Başlangıç HEAD:** `e87199e2bae879f22c4665ea33b08cb4c7993397`. **Test edilen final kod:** [`6235284eab266a5009d3d682bd6d92f95e5b8a72`](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/commit/6235284eab266a5009d3d682bd6d92f95e5b8a72). İlk entegrasyon commit’i `9634b4700ae51cdbe90cd216cad40934c6378baf` üzerindeki run `44174276110`, Godot 4.7.2’nin `PackedStringArray` sabit ifadesini reddetmesi nedeniyle headless açılışta başarısız oldu; gerekli state listeleri runtime tipli değişkene çevrilip final commit yeniden test edildi.
 - **Upstream:** `CodingQuests/godot-state-machine`, sabit commit [`7188bb0ce006f5ee10e4d921b6b34abf598355f5`](https://github.com/CodingQuests/godot-state-machine/tree/7188bb0ce006f5ee10e4d921b6b34abf598355f5), MIT. Yalnız `state_machine/StateMachine.gd`, `state_machine/State.gd` ve lisans kullanıldı; demo slime, görseller ve upstream savaş kodu taşınmadı.
@@ -173,7 +173,13 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 07
 
-SOHBET-07 | Survival Core Lite — önceki kabulü bekliyor.
+SOHBET-07 | Survival Core Lite — hazır. Rapor 06, `6235284` ve Actions 44174412794 üzerinde 22/22 ile kabul edildi.
+
+**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; yeni dal veya PR yok. HEAD, AGENTS.md, README.md ve mevcut `tamu-topdown-bootstrap` görevini oku. Kaynak `openclawaimac/godot-survival-core-lite`, doğrulanmış commit `c4dc0238ef80bfe2efc68b9e992bb00da57ddc0b`, kökte MIT `LICENSE`; yalnız `addons/survival_core/` içinden `DayNightClock` ve açlık/susuzluk mantığını al. Demo, envanter, tarif veya toplama kodu taşıma.
+
+**Hedef ve kapsam:** Saat ile `CanvasModulate` üzerinden shadersız gün/gece; HUD rengini değiştirme. Açlık/susuzluk bir kez ve öngörülebilir biçimde ilerlesin. Açlık/susuzluk kaynaklı hasarı mevcut oyuncu ClutteredCode `Health` bileşenine yönlendir; SurvivalStats içindeki ayrı can, yenilenme ve ölüm mekanizmasını paralel yürütme. Yalnız upstream çekirdek/lisans, survival adaptörü, gerekli oyuncu ve prototype sahne bağlantıları, ilgili testler ve mevcut CI test kapsamı. Yeni kayıt şeması, HUD, envanter veya üretim sistemi açma.
+
+**Kabul:** GitHub Actions’ta önceki 22 testi koru. Sabit adımlarla gün/gece geçişi ve tur sonu sarımı, açlık ve susuzluğun ilerlemesi, eşik altında mevcut Health’e hasarın bir kez uygulanması ve ölümün mevcut yoldan işlenmesi için deterministik testler ekle. Hata varsa logdan düzeltip yeniden çalıştır. Kod commit’ini, başarılı Actions sonucunu, kaynak ref/lisansı ve Android durumunu yalnız Rapor 07’ye yazıp GitHub’dan geri oku; yeni Beyin görevi açma.
 
 ### Rapor 08
 
