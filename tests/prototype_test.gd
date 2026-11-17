@@ -119,7 +119,7 @@ func test_interrupted_write_recovers_last_good_state() -> void:
 	_attach_to_test_viewport(room, tree)
 	await tree.process_frame
 
-	room.player.position = Vector2(222.0, 150.0)
+	room.player.position = Vector2(250.0, 190.0)
 	room.select_at(Vector2(288.0, 190.0))
 	assert_int(room.transfer_to_selected_chest(3)).is_equal(3)
 	var saved_position := room.player.position
