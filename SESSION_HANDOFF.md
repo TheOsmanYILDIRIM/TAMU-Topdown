@@ -102,7 +102,7 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 01
 
-- **Durum:** `review_requested` — GitHub Actions kabul testleri geçti. Koordinatör onayı bekleniyor.
+- **Durum:** `verified` — Koordinatör Actions job ve ham günlüklerini doğruladı: Godot 4.7.2 açılış ve GdUnit4 2/2. Test edilen commit ile inceleme HEAD'i arasında yalnız bu rapor dosyası değişmiş. Android kapsam dışı; SOHBET-02 açılabilir.
 - **Olay:** `tamu-topdown-sohbet01-ci-44152103521` · UTC `2026-11-17T18:50:39Z` (CI tamamlanma zamanı).
 - **Başlangıç HEAD:** `c06d76e1bb1f713076179fec4513005cb1fe49c6`. **Test edilen kod:** [`dff1afce330f73fd6535c7886e667f3b9f0cd270`](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/commit/dff1afce330f73fd6535c7886e667f3b9f0cd270). Önceki engel raporu ilk commit'te korunuyor.
 - **Yollar:** `.github/workflows/godot-tests.yml`, `tests/prototype_test.gd`, `tests/.gdignore`. Oyun kaynakları değişmedi; yeni dal/PR yok.
@@ -114,7 +114,13 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 02
 
-SOHBET-02 | Rubonnek Inventory Manager — önceki kabulü bekliyor.
+SOHBET-02 | Rubonnek Inventory Manager — hazır; çalışma sohbeti açılmadı.
+
+**Brif:** Her mesajına `[SOHBET-02 | Rubonnek Inventory Manager]` ile başla. Başlangıçta main HEAD, AGENTS.md, README.md, bu dosya ve mevcut Avenox görevi `tamu-topdown-bootstrap` doğrulanır. Yalnız main, tek yazıcı, dal/PR yok. Rubonnek upstream commit ve lisansını doğrula ve rapora yaz; demo içeriğini alma. Eski TAMU deposundan doğrulanmış bir eşya tanımı ve özgün sabit kimliği kullan; kaynağı yoksa uydurma, engeli raporla. Çanta ve sandık tek envanter katmanında; menzildeki seçili sandığa aktarımı bağla. Save, quest, HUD veya başka entegrasyon açma.
+
+**Yazma kapsamı:** Rubonnek eklentisinin doğrulanmış addon dizini, bu entegrasyona ait eşya verisi ve envanter adaptörü, `scripts/prototype.gd`, `scenes/prototype.tscn`, gerekirse `project.godot`, envanter testi ve mevcut `.github/workflows/godot-tests.yml` (yalnız tetikleyici/test kapsamı gerekirse). Somut yolları kaynağı okuyunca sabitle; mevcut hareket/seçim testlerini koru.
+
+**Kabul ve teslim:** GitHub Actions'ta mevcut iki testin yanı sıra iki yönlü aktarımı, kısmi aktarımı ve dolu hedefte eşya kaybı/çoğalması olmadığını doğrula. Sonuçları yalnız bu Rapor 02 bölümüne yaz; GitHub'dan yeniden açıp doğrula. Kod commit'i, Actions bağlantısı ve rapor bağlantısını ver. Android sonucu ayrı; yeni Avenox görevi açma.
 
 ### Rapor 03
 
