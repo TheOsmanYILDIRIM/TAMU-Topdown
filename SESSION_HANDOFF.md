@@ -207,7 +207,13 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 10
 
-SOHBET-10 | Settings + Menus — önceki kabulü bekliyor.
+SOHBET-10 | Settings + Menus — hazır. Rapor 09’un `74d484f` commit’i ve Actions 44180970649 ham günlükleri bağımsız doğrulandı: 33/33; sonrasında yalnız rapor değişti.
+
+**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; dal veya PR açma. Güncel HEAD, AGENTS.md, README.md, bu dosya ve mevcut `tamu-topdown-bootstrap` görevini doğrula. Kaynak `seloc0des/godot-settings-menus`, sabit commit `ae448556b154a71ee63661fbca4141546db356d4`, kökte MIT `LICENSE`. `addons/settings_menus/` içinden yalnız gereken duraklatma, ses ve ayar çekirdeği ile lisansı al. Demo, başka ana menü, klavye eşleme ve Android’de masaüstü çözünürlük/pencere seçenekleri ekleme.
+
+**Hedef ve kapsam:** Dokunmatik duraklatma/devam ve kalıcı ses ayarları. Ayarları oyun kaydından ayrı dosyada sakla; bozuk veya eksik ayarda güvenli varsayılanları kullan. Duraklatma dünyayı durdursun ama menü çalışsın. Geri önceliği: açık ayar alt paneli, duraklatma menüsü, açık Gohud çantası; çanta açıkken geri duraklatmayı açmasın, hiçbiri açık değilken mevcut geri davranışını koru. Menü dokunuşları dünyaya sızmasın. Yalnız gerekli addon, ayar/menü adaptörü, sahne ve proje bağlantıları, ses veri/config, ilgili testler ve mevcut CI kapsamına dokun. Oyun kayıt şemasını, envanter kurallarını ve mini haritayı değiştirme.
+
+**Kabul:** GitHub Actions’ta önceki 33 testi koru. Duraklat/devam sırasında dünya ve menünün doğru çalışmasını, ses tercihinin yeniden yüklenmesini ve oyun kaydından bağımsızlığını, geri önceliğini ve menü dokunuşunun dünyaya sızmamasını doğrula. Kod commit’i, başarılı Actions sonucu ve kaynak ref/lisansı yalnız Rapor 10’a yaz ve geri oku. Android cihaz/APK doğrulamasını ayrı belirt; yeni Beyin görevi açma.
 
 ### Rapor 11
 
