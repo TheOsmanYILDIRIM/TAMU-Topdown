@@ -77,6 +77,127 @@ func test_inventory_full_target_preserves_source_and_total() -> void:
 	assert_int(inventory.count(inventory.bag) + inventory.count(inventory.chest)).is_equal(109)
 
 
+func test_save_round_trip_restores_player_inventory_and_world_pickup() -> void:
+	var slot_id := 9301
+	SaveManager.delete_slot(slot_id)
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	room.player.position = Vector2(250.0, 190.0)
+	room.select_at(Vector2(288.0, 190.0))
+	assert_int(room.transfer_to_selected_chest(5)).is_equal(5)
+
+	room.player.position = Vector2(400.0, 190.0)
+	room.select_at(Prototype.PICKUP)
+	assert_bool(room.take_selected_pickup()).is_true()
+	var saved_position := room.player.position
+	assert_int(room.save_game(slot_id)).is_equal(OK)
+
+	room.player.position = Vector2(100.0, 100.0)
+	room.inventory.bag.clear()
+	room.inventory.chest.clear()
+	_add(room.inventory.bag, 2)
+	room.pickup_taken = false
+
+	var loaded := room.load_game(slot_id)
+	assert_bool(bool(loaded.get("ok", false))).is_true()
+	assert_bool(bool(loaded.get("recovered", false))).is_false()
+	assert_bool(room.player.position.distance_to(saved_position) < 0.01).is_true()
+	assert_int(room.inventory.count(room.inventory.bag)).is_equal(8)
+	assert_int(room.inventory.count(room.inventory.chest)).is_equal(5)
+	assert_bool(room.pickup_taken).is_true()
+	assert_int(SaveManager.delete_slot(slot_id)).is_equal(OK)
+
+
+func test_interrupted_write_recovers_last_good_state() -> void:
+	var slot_id := 9302
+	SaveManager.delete_slot(slot_id)
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	room.player.position = Vector2(222.0, 150.0)
+	room.select_at(Vector2(288.0, 190.0))
+	assert_int(room.transfer_to_selected_chest(3)).is_equal(3)
+	var saved_position := room.player.position
+	assert_int(room.save_game(slot_id)).is_equal(OK)
+
+	var state_path: String = SaveManager.state_path_for_slot(slot_id)
+	var backup_path: String = SaveManager.backup_path_for_slot(slot_id)
+	var tmp_path: String = SaveManager.temp_path_for_slot(slot_id)
+	if FileAccess.file_exists(backup_path):
+		assert_int(DirAccess.remove_absolute(backup_path)).is_equal(OK)
+	assert_int(DirAccess.rename_absolute(state_path, backup_path)).is_equal(OK)
+	_write_text(tmp_path, "{\"version\": 1")
+
+	room.player.position = Vector2(500.0, 280.0)
+	room.inventory.bag.clear()
+	room.inventory.chest.clear()
+	_add(room.inventory.bag, 1)
+
+	var loaded := room.load_game(slot_id)
+	assert_bool(bool(loaded.get("ok", false))).is_true()
+	assert_bool(bool(loaded.get("recovered", false))).is_true()
+	assert_bool(room.player.position.distance_to(saved_position) < 0.01).is_true()
+	assert_int(room.inventory.count(room.inventory.bag)).is_equal(9)
+	assert_int(room.inventory.count(room.inventory.chest)).is_equal(3)
+	assert_int(SaveManager.delete_slot(slot_id)).is_equal(OK)
+
+
+func test_corrupt_or_unsupported_save_does_not_mutate_live_state() -> void:
+	var slot_id := 9303
+	SaveManager.delete_slot(slot_id)
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	assert_int(room.save_game(slot_id)).is_equal(OK)
+
+	room.player.position = Vector2(260.0, 190.0)
+	room.inventory.bag.clear()
+	room.inventory.chest.clear()
+	_add(room.inventory.bag, 4)
+	_add(room.inventory.chest, 6)
+	room.pickup_taken = true
+	var live_position := room.player.position
+
+	var state_path: String = SaveManager.state_path_for_slot(slot_id)
+	_write_text(state_path, "{broken")
+	var corrupt_result := room.load_game(slot_id)
+	assert_bool(bool(corrupt_result.get("ok", true))).is_false()
+	_assert_live_state_unchanged(room, live_position, 4, 6, true)
+
+	_write_text(state_path, "{\"version\":999,\"saved_unix\":0,\"data\":{}}")
+	var unsupported_result := room.load_game(slot_id)
+	assert_bool(bool(unsupported_result.get("ok", true))).is_false()
+	_assert_live_state_unchanged(room, live_position, 4, 6, true)
+	assert_int(SaveManager.delete_slot(slot_id)).is_equal(OK)
+
+
+func _assert_live_state_unchanged(
+	room: Prototype,
+	expected_position: Vector2,
+	expected_bag: int,
+	expected_chest: int,
+	expected_taken: bool
+) -> void:
+	assert_bool(room.player.position.distance_to(expected_position) < 0.01).is_true()
+	assert_int(room.inventory.count(room.inventory.bag)).is_equal(expected_bag)
+	assert_int(room.inventory.count(room.inventory.chest)).is_equal(expected_chest)
+	assert_bool(room.pickup_taken).is_equal(expected_taken)
+
+
+func _write_text(path: String, text: String) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	assert_bool(file != null).is_true()
+	file.store_string(text)
+	file.flush()
+	file.close()
+
+
 func _add(storage: InventoryManager, amount: int) -> void:
 	var excess: ExcessItems = storage.add(
 		InventoryBridge.WOOD_LOG_PLUGIN_ID, amount, null, -1, false

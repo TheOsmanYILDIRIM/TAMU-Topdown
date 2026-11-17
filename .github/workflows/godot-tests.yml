@@ -2,7 +2,7 @@ name: Godot startup and gameplay tests
 on:
   push:
     branches: [main]
-    paths: ['project.godot', 'scenes/**', 'scripts/**', 'tests/**', 'addons/**', 'data/**', '.github/workflows/godot-tests.yml']
+    paths: ['project.godot', 'scenes/**', 'scripts/**', 'tests/**', 'addons/**', 'data/**', 'save_system/**', '.github/workflows/godot-tests.yml']
   workflow_dispatch:
 
 permissions:
@@ -41,7 +41,7 @@ jobs:
           pin=d18770221c2df4a3c991a42fdce7907df40eea75
           work="$RUNNER_TEMP/tamu-test"
           mkdir -p "$work/addons"
-          cp -R project.godot scenes scripts tests addons data "$work/"
+          cp -R project.godot scenes scripts tests addons data save_system "$work/"
           rm "$work/tests/.gdignore"
           git init -q "$RUNNER_TEMP/gdunit-source"
           git -C "$RUNNER_TEMP/gdunit-source" fetch --quiet --depth=1 https://github.com/godot-gdunit-labs/gdUnit4.git "$pin"
@@ -50,7 +50,7 @@ jobs:
           git -C "$RUNNER_TEMP/gdunit-source" show FETCH_HEAD:LICENSE > "$work/addons/gdUnit4/LICENSE"
           grep -q '^MIT License' "$work/addons/gdUnit4/LICENSE"
 
-      - name: GdUnit4 movement and touch-selection tests
+      - name: GdUnit4 movement, inventory, and save tests
         working-directory: ${{ runner.temp }}/tamu-test
         run: |
           godot --headless --path . --editor --import 2>&1 | tee "$RUNNER_TEMP/tamu-test-import.log"
@@ -63,11 +63,20 @@ jobs:
           from xml.etree import ElementTree as ET
           reports = list(Path("reports").rglob("*.xml"))
           cases = [case for report in reports for case in ET.parse(report).iter("testcase")]
-          expected = {"test_floor_touch_moves_player", "test_touch_selects_exact_object", "test_inventory_transfers_both_directions_through_selected_chest", "test_inventory_partial_transfer_stops_at_target_capacity", "test_inventory_full_target_preserves_source_and_total"}
+          expected = {
+              "test_floor_touch_moves_player",
+              "test_touch_selects_exact_object",
+              "test_inventory_transfers_both_directions_through_selected_chest",
+              "test_inventory_partial_transfer_stops_at_target_capacity",
+              "test_inventory_full_target_preserves_source_and_total",
+              "test_save_round_trip_restores_player_inventory_and_world_pickup",
+              "test_interrupted_write_recovers_last_good_state",
+              "test_corrupt_or_unsupported_save_does_not_mutate_live_state",
+          }
           passed = {case.attrib.get("name") for case in cases if not any(case.find(x) is not None for x in ("failure", "error", "skipped"))}
           if not expected <= passed:
               raise SystemExit(f"Missing passing tests: {expected - passed}; recorded: {passed}")
-          print("Verified all five required JUnit test cases passed.")
+          print("Verified all eight required JUnit test cases passed.")
           PY
     defaults:
       run:
