@@ -15,7 +15,7 @@ var bag_open := false
 var hotbar_frame: PanelContainer
 var hotbar: GoSlotGrid
 var bag_toggle: Button
-var bag_panel: PanelContainer
+var bag_panel: Panel
 var bag_grid: GoSlotGrid
 var chest_grid: GoSlotGrid
 var bag_total: Label
@@ -67,16 +67,30 @@ func _build() -> void:
 	bag_toggle.pressed.connect(toggle_bag)
 	add_child(bag_toggle)
 
-	bag_panel = PanelContainer.new()
+	bag_panel = Panel.new()
 	bag_panel.name = "BagPanel"
 	bag_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	bag_panel.clip_contents = true
 	bag_panel.add_theme_stylebox_override(&"panel", _panel_style())
 	add_child(bag_panel)
 
+	var scroll := ScrollContainer.new()
+	scroll.name = "Scroll"
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.offset_left = 8.0
+	scroll.offset_top = 8.0
+	scroll.offset_right = -8.0
+	scroll.offset_bottom = -8.0
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP
+	bag_panel.add_child(scroll)
+
 	var content := VBoxContainer.new()
 	content.name = "Content"
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content.add_theme_constant_override(&"separation", 6)
-	bag_panel.add_child(content)
+	scroll.add_child(content)
 
 	var title := Label.new()
 	title.text = "Bag"
