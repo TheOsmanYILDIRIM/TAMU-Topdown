@@ -319,17 +319,21 @@ func _layout() -> void:
 	if area.size.x <= 1.0 or area.size.y <= 1.0:
 		return
 
-	var row_height := 58.0
 	var toggle_width := 64.0
 	var gap := 8.0
-	var hotbar_width := minf(216.0, maxf(192.0, area.size.x - toggle_width - gap - 16.0))
+	var hotbar_min := hotbar_frame.get_combined_minimum_size()
+	var hotbar_width := minf(216.0, area.size.x - toggle_width - gap)
+	hotbar_width = maxf(hotbar_min.x, hotbar_width)
+	var row_height := maxf(58.0, hotbar_min.y)
 	var row_width := hotbar_width + gap + toggle_width
-	var row_x := area.position.x + (area.size.x - row_width) * 0.5
+	var row_x := area.position.x + maxf(0.0, (area.size.x - row_width) * 0.5)
 	var row_y := area.end.y - row_height - 8.0
+	if row_y < area.position.y:
+		row_y = area.position.y
 
 	hotbar_frame.position = Vector2(row_x, row_y)
 	hotbar_frame.size = Vector2(hotbar_width, row_height)
-	bag_toggle.position = Vector2(row_x + hotbar_width + gap, row_y + 5.0)
+	bag_toggle.position = Vector2(row_x + hotbar_width + gap, row_y + (row_height - 48.0) * 0.5)
 	bag_toggle.size = Vector2(toggle_width, 48.0)
 
 	var panel_width := minf(300.0, maxf(240.0, area.size.x - 16.0))
