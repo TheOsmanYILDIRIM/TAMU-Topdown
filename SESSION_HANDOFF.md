@@ -114,13 +114,15 @@ Her bölümde: durum (review_requested/blocked/unverified), benzersiz event_id, 
 
 ### Rapor 02
 
-SOHBET-02 | Rubonnek Inventory Manager — hazır; çalışma sohbeti açılmadı.
-
-**Brif:** Her mesajına `[SOHBET-02 | Rubonnek Inventory Manager]` ile başla. Başlangıçta main HEAD, AGENTS.md, README.md, bu dosya ve mevcut Avenox görevi `tamu-topdown-bootstrap` doğrulanır. Yalnız main, tek yazıcı, dal/PR yok. Rubonnek upstream commit ve lisansını doğrula ve rapora yaz; demo içeriğini alma. Eski TAMU deposundan doğrulanmış bir eşya tanımı ve özgün sabit kimliği kullan; kaynağı yoksa uydurma, engeli raporla. Çanta ve sandık tek envanter katmanında; menzildeki seçili sandığa aktarımı bağla. Save, quest, HUD veya başka entegrasyon açma.
-
-**Yazma kapsamı:** Rubonnek eklentisinin doğrulanmış addon dizini, bu entegrasyona ait eşya verisi ve envanter adaptörü, `scripts/prototype.gd`, `scenes/prototype.tscn`, gerekirse `project.godot`, envanter testi ve mevcut `.github/workflows/godot-tests.yml` (yalnız tetikleyici/test kapsamı gerekirse). Somut yolları kaynağı okuyunca sabitle; mevcut hareket/seçim testlerini koru.
-
-**Kabul ve teslim:** GitHub Actions'ta mevcut iki testin yanı sıra iki yönlü aktarımı, kısmi aktarımı ve dolu hedefte eşya kaybı/çoğalması olmadığını doğrula. Sonuçları yalnız bu Rapor 02 bölümüne yaz; GitHub'dan yeniden açıp doğrula. Kod commit'i, Actions bağlantısı ve rapor bağlantısını ver. Android sonucu ayrı; yeni Avenox görevi açma.
+- **Durum:** `review_requested` — Rubonnek envanter entegrasyonu main üzerinde tamamlandı; GitHub Actions kabulü geçti. Koordinatör kabulü bekleniyor.
+- **Olay:** `tamu-topdown-sohbet02-ci-44160232033` · UTC `2026-11-17T19:35:53Z`.
+- **Başlangıç HEAD:** `6d59ccd33084f044a5f492e90300445f7b00788d`. **Test edilen kod:** [`38b00e3d8848e23d626753648bfbf7c0adbece0b`](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/commit/38b00e3d8848e23d626753648bfbf7c0adbece0b).
+- **Upstream:** `Rubonnek/inventory-manager` dalı `master`, sabit commit `693d89f6caca96c7f357485674f54dcfb89ec6d5`; `addons/rubonnek.inventory_manager/LICENSE.md` MIT. Doğrulanmış addon dizini aynen taşındı; demo içeriği alınmadı.
+- **TAMU eşya verisi:** eski `TheOsmanYILDIRIM/TAMU-K-K` commit `b2668ec6a9fae7280d158997254a4053dffcc5ee` içindeki `core:wood_log` ve `max_count: 99` korundu. Eski `visual` bloğu, görsel ve texture yolu taşınmadı.
+- **Bağlantı:** tek paylaşılan `ItemRegistry` altında çanta ve sandık `InventoryManager`ları kullanılıyor. Aktarım yalnız seçili sandık menzildeyken açılıyor; hedef kapasitesi kadar kısmi aktarım yapıyor, dolu hedefte 0 taşıyor ve başarısız hedef eklemesinde kaynak geri yükleniyor. Save, quest veya ayrı HUD sistemi açılmadı.
+- **Yollar:** `addons/rubonnek.inventory_manager/**`, `data/catalog/definitions/wood_log.json`, `scripts/inventory_bridge.gd`, `scripts/prototype.gd`, `scenes/prototype.tscn`, `tests/prototype_test.gd`, `.github/workflows/godot-tests.yml`.
+- **GitHub Actions:** [run 44160232033](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/actions/runs/44160232033), job `134311727226`, `success`. Godot `4.7.2.stable.official.ed1daf0bf` headless açılış geçti. GdUnit4 sonucu: **5 test, 0 hata, 0 başarısız, 0 skipped**; mevcut hareket ve seçim testleriyle birlikte iki yönlü aktarım, kısmi hedef kapasitesi ve dolu hedefte toplam eşya korunumu geçti.
+- **Rapor:** [SESSION_HANDOFF.md · Rapor 02](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/blob/main/SESSION_HANDOFF.md#rapor-02). Android cihaz/APK doğrulaması bu kabulün kapsamı dışında ve çalıştırılmadı.
 
 ### Rapor 03
 
