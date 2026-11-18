@@ -250,10 +250,18 @@ SOHBET-12 | Better Tile Editor — tamamlandı ve doğrulandı.
 
 ### Rapor 13
 
-SOHBET-13 | SpriteFrames Batch Importer — hazır. Rapor 12’nin `af7d253` kod commit’i ve Actions `44267742370` iş günlükleri bağımsız doğrulandı: native harita eklentisiz açıldı ve 42/42 test geçti.
+SOHBET-13 | SpriteFrames Batch Importer — tamamlandı ve doğrulandı. Rapor 12’nin `af7d253` kod commit’i ve Actions `44267742370` iş günlükleri bağımsız doğrulandı: native harita eklentisiz açıldı ve 42/42 test geçti.
 
 **Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; yeni dal veya PR açma. Godot Asset Library’de minato’nun SpriteFrames Batch Importer 0.1.1 sürümü MIT olarak listeleniyor. Uygulamadan önce upstream kaynak, lisans dosyası ve tam commit’i doğrula ve sabitle.
 
 **Hedef ve sınır:** Eklentiyi yalnız izole editör kopyasında kullan. Yönleri ve kareleri birbirinden ayırt edilebilen yeni, özgün/deterministik bir örnek sprite sheet ile native Godot `SpriteFrames` üret. Eski TAMU görsellerini taşıma; oynanış sahnesini ve çalışma zamanı yapılandırmasını değiştirme.
 
 **Kabul ve teslim:** GitHub Actions’ta mevcut 42 testi koru. Üretilen animasyonların adlarını, yön eşleşmesini, kare sayısını ve kare sırası/atlas bölgelerini doğrula. Native çıktıyı eklenti veya autoload bulunmayan temiz Godot projesinde açıp `AnimatedSprite2D` ile yüklenebildiğini doğrula. Kod commit’i, kaynak ve lisans, Actions sonucu ve geri okuma kanıtını yalnız Rapor 13’e işle. Android/APK ve elle editör doğrulaması yapılmadıysa ayrı belirt.
+
+**Teslim — doğrulandı.** Yalnız `main`; dal veya PR açılmadı.
+
+- **Kaynak ve lisans:** Minato-chen/godot-spriteframes-batch-importer, `v0.1.1` etiketi → `6a728af784dcc9affb01622374f9ae6d967421f2`. Sabit commit'teki [eklenti lisansı](https://github.com/Minato-chen/godot-spriteframes-batch-importer/blob/6a728af784dcc9affb01622374f9ae6d967421f2/addons/spriteframes_batch_importer/LICENSE) MIT, © 2026 CHEN YANGGANG; lisans CI’da tekrar denetlendi. Etiket `v0.1.1` olsa da o commit'in `plugin.cfg` dosyası `0.1.0` yazıyor; kullanılan kaynak tam SHA ile sabit.
+- **Kod ve geri okuma:** `a2f3840e919b6f50f434780492323fd2954d5b2f` ve nihai kod HEAD’i `4102e3ed9be84e5b9238e67ff76d9e7031d01c16` geri okundu. Yalnız `.github/workflows/godot-tests.yml` değişti (doğrulanan nihai blob: `86c7ae3affc25ce62f794a4666d5490df866b72b`). Oynanış sahnesi, çalışma zamanı yapılandırması ve mevcut 42 test değiştirilmedi.
+- **Çıktı:** CI özgün, tekrarlanabilir dört yönlü `sample.svg` üretti. Sabit upstream jeneratörü yalnız izole editör projesinde çalıştırılıp native `sample_frames.tres` kaydedildi. Eklenti ve autoload içermeyen ikinci projede `AnimatedSprite2D` bu kaynağı yükledi ve oynattı; dört yönde `idle` için 2, `walk` için 3 kare olmak üzere 8 animasyon ve sıralı 20 atlas karesi doğrulandı. [Doğrulanmış SVG ve TRES paketi](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/actions/runs/44306906406/artifacts/14428527100).
+- **GitHub Actions:** [çalıştırma 44306906406](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/actions/runs/44306906406), iş `134810713265`, nihai kod SHA’sında başarılı. İş günlüğü 8 animasyon/20 kareyi ve 42/42 mevcut JUnit testini açıkça doğruladı. Paket kimliği `14428527100` aynı çalıştırmanın artefakt kaydından geri okundu.
+- **Kapsam dışı doğrulama:** Gerçek Android cihaz/APK ve Godot GUI’de elle editör testi yapılmadı.
