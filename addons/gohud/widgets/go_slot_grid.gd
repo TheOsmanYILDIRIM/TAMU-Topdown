@@ -9,11 +9,16 @@ signal slot_pressed(index: int)
 	set(value):
 		slot_count = maxi(0, value)
 		_rebuild()
-@export_range(16, 96) var cell_size := 48:
+@export_range(16, 96) var cell_size := 40:
 	set(value):
 		cell_size = value
 		for cell: GoSlot in _cells:
 			cell.visual_size = cell_size
+@export var slot_visual_kind: StringName = &"hotbar":
+	set(value):
+		slot_visual_kind = value
+		for cell: GoSlot in _cells:
+			cell.visual_kind = value
 @export var draggable := false
 @export var keyboard_focus := false:
 	set(value):
@@ -72,6 +77,7 @@ func _rebuild() -> void:
 		var made := GoSlot.new()
 		made.name = "Cell%d" % index
 		made.visual_size = cell_size
+		made.visual_kind = slot_visual_kind
 		made.keyboard_focus = keyboard_focus
 		made.mouse_filter = Control.MOUSE_FILTER_STOP
 		made.pressed.connect(_on_pressed.bind(index))

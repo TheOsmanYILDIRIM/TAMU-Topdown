@@ -2,7 +2,7 @@ extends Control
 class_name TamuMiniMapAdapter
 
 const MiniMapScene = preload("res://addons/minimap/minimap.tscn")
-const GuiAssets = preload("res://scripts/tamu_gui_assets.gd")
+const SourceAssets = preload("res://scripts/tamu_gui_source_assets.gd")
 
 var map_core: TamuMiniMapCore
 var toggle_button: TextureButton
@@ -26,7 +26,7 @@ func _ready() -> void:
 
 func _build() -> void:
 	_overlay = ColorRect.new()
-	_overlay.color = Color(0.025, 0.02, 0.015, 0.64)
+	_overlay.color = Color(0.025, 0.018, 0.012, 0.61)
 	_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_overlay.z_index = 30
@@ -35,22 +35,22 @@ func _build() -> void:
 	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel.z_index = 31
 	_overlay.add_child(_panel)
-	var window_art := GuiAssets.nine_patch(&"window_panel")
+	var window_art := SourceAssets.nine_patch(&"window_panel")
 	window_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_panel.add_child(window_art)
-	var title_plate := GuiAssets.nine_patch(&"title_plaque")
-	title_plate.position = Vector2(116.0, -10.0)
-	title_plate.size = Vector2(148.0, 38.0)
+	var title_plate := SourceAssets.nine_patch(&"title_plaque")
+	title_plate.position = Vector2(105.0, -8.0)
+	title_plate.size = Vector2(128.0, 36.0)
 	_panel.add_child(title_plate)
 	var title := Label.new()
 	title.text = "Map"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	GuiAssets.apply_text(title, 15)
+	SourceAssets.apply_text(title, 14)
 	title.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	title_plate.add_child(title)
 	_close_button = TextureButton.new()
-	_close_button.texture_normal = GuiAssets.texture(&"close_icon")
+	_close_button.texture_normal = SourceAssets.texture(&"close_icon")
 	_close_button.texture_pressed = _close_button.texture_normal
 	_close_button.texture_hover = _close_button.texture_normal
 	_close_button.ignore_texture_size = true
@@ -59,12 +59,17 @@ func _build() -> void:
 	_close_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	_close_button.pressed.connect(func() -> void: set_map_open(false))
 	_panel.add_child(_close_button)
-	_map_frame = GuiAssets.nine_patch(&"map_frame")
+	_map_frame = SourceAssets.nine_patch(&"map_frame")
 	_panel.add_child(_map_frame)
 	map_core = MiniMapScene.instantiate() as TamuMiniMapCore
 	map_core.name = "Core"
 	map_core.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	map_core.stretch = true
 	_map_frame.add_child(map_core)
+	if map_core.marker != null:
+		map_core.marker.visible = false
+	if map_core.border != null:
+		map_core.border.visible = false
 	_north_indicator = _icon(&"north_indicator")
 	_player_marker = _icon(&"player_marker")
 	_map_frame.add_child(_north_indicator)
@@ -73,18 +78,18 @@ func _build() -> void:
 	toggle_button.name = "Toggle"
 	toggle_button.ignore_texture_size = true
 	toggle_button.stretch_mode = TextureButton.STRETCH_SCALE
-	toggle_button.custom_minimum_size = Vector2(42.0, 42.0)
+	toggle_button.custom_minimum_size = Vector2(38.0, 38.0)
 	toggle_button.focus_mode = Control.FOCUS_NONE
 	toggle_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	toggle_button.tooltip_text = "Mini-map"
 	toggle_button.accessibility_name = "Mini-map"
-	toggle_button.z_index = 35
+	toggle_button.z_index = 1
 	var icon := _icon(&"map_icon")
 	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	icon.offset_left = 8.0
-	icon.offset_top = 8.0
-	icon.offset_right = -8.0
-	icon.offset_bottom = -8.0
+	icon.offset_left = 7.0
+	icon.offset_top = 7.0
+	icon.offset_right = -7.0
+	icon.offset_bottom = -7.0
 	toggle_button.add_child(icon)
 	toggle_button.pressed.connect(toggle_map)
 	add_child(toggle_button)
@@ -92,7 +97,7 @@ func _build() -> void:
 
 func _icon(name: StringName) -> TextureRect:
 	var result := TextureRect.new()
-	result.texture = GuiAssets.texture(name)
+	result.texture = SourceAssets.texture(name)
 	result.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	result.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	result.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -112,9 +117,10 @@ func set_map_open(value: bool) -> void:
 	if map_core != null:
 		map_core.set_map_visible(value)
 	if toggle_button != null:
-		toggle_button.texture_normal = GuiAssets.texture(&"square_button_active" if value else &"square_button")
-		toggle_button.texture_pressed = GuiAssets.texture(&"square_button_active")
+		toggle_button.texture_normal = SourceAssets.texture(&"square_button_active" if value else &"square_button")
+		toggle_button.texture_pressed = SourceAssets.texture(&"square_button_active")
 		toggle_button.texture_hover = toggle_button.texture_normal
+		toggle_button.z_index = 35 if value else 1
 	_layout()
 
 func handle_back_event(event: InputEvent) -> bool:
@@ -155,19 +161,19 @@ func _layout() -> void:
 	var area := _effective_safe_rect()
 	if area.size.x <= 1.0 or area.size.y <= 1.0:
 		return
-	var button_size := Vector2(42.0, 42.0)
+	var button_size := Vector2(38.0, 38.0)
 	toggle_button.position = Vector2(area.end.x - button_size.x - 8.0, area.position.y + 8.0)
 	toggle_button.size = button_size
-	var panel_size := Vector2(minf(400.0, area.size.x - 20.0), minf(250.0, area.size.y - 22.0))
+	var panel_size := Vector2(minf(338.0, area.size.x - 18.0), minf(218.0, area.size.y - 18.0))
 	_panel.size = panel_size
 	_panel.position = area.position + (area.size - panel_size) * 0.5
-	_close_button.position = Vector2(panel_size.x - 35.0, 7.0)
-	_close_button.size = Vector2(30.0, 30.0)
-	_map_frame.position = Vector2(14.0, 38.0)
-	_map_frame.size = Vector2(panel_size.x - 28.0, panel_size.y - 52.0)
-	map_core.position = Vector2(12.0, 12.0)
-	map_core.size = _map_frame.size - Vector2(24.0, 24.0)
-	_north_indicator.position = Vector2(18.0, 17.0)
-	_north_indicator.size = Vector2(28.0, 44.0)
-	_player_marker.size = Vector2(28.0, 28.0)
+	_close_button.position = Vector2(panel_size.x - 34.0, 6.0)
+	_close_button.size = Vector2(28.0, 28.0)
+	_map_frame.position = Vector2(13.0, 35.0)
+	_map_frame.size = Vector2(panel_size.x - 26.0, panel_size.y - 47.0)
+	map_core.position = Vector2(10.0, 10.0)
+	map_core.size = _map_frame.size - Vector2(20.0, 20.0)
+	_north_indicator.position = Vector2(_map_frame.size.x - 42.0, 12.0)
+	_north_indicator.size = Vector2(25.0, 43.0)
+	_player_marker.size = Vector2(24.0, 24.0)
 	_player_marker.position = (_map_frame.size - _player_marker.size) * 0.5

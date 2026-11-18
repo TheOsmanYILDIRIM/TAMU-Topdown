@@ -366,6 +366,87 @@ jobs:
         shell: bash
 
 
+  gui-visual:
+    needs: headless
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Install verified Godot 4.7.2
+        run: |
+          set -euo pipefail
+          archive=Godot_v4.7.2-stable_linux.x86_64.zip
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/$archive" "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/$archive"
+          printf '%s  %s\n' 9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65 "$RUNNER_TEMP/$archive" | sha512sum --check
+          unzip -q "$RUNNER_TEMP/$archive" -d "$RUNNER_TEMP/godot-bin"
+          mv "$RUNNER_TEMP/godot-bin/Godot_v4.7.2-stable_linux.x86_64" "$RUNNER_TEMP/godot-bin/godot"
+          chmod +x "$RUNNER_TEMP/godot-bin/godot"
+          "$RUNNER_TEMP/godot-bin/godot" --version | grep -E '^4\.7\.2\.stable\.'
+          echo "$RUNNER_TEMP/godot-bin" >> "$GITHUB_PATH"
+
+      - name: Verify approved source hashes
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/gui-source.sha256" <<'EOF'
+          fcd425bd6356428b39c4320581326cbf3ff28feb37b6eb4efea6667e485f4253  assets/gui/source/components/126108.png
+          7a30a234a12c73924b8c5b1c8624da3519645fd0d83c0a72210846a4aebec2ae  assets/gui/source/components/126113.png
+          6e0c3ff33b0c02fe8a152f755bf2b9e5eef1827cd523e59a63be34bee2a7263f  assets/gui/source/components/126114.png
+          c6757f70948f0875f324f3840267376466933747125e3dd6587c8c6b299df985  assets/gui/source/components/126116.png
+          7c6ccee38134c6e94fea155e0f200ad89b751453d4bf26b3095a09e76602793c  assets/gui/source/components/126117.png
+          95b86776ac5849c8d54b4a00047243cc0577618b8611b0ed3f71990a61dbc93e  assets/gui/source/components/126118.png
+          c88bf17a1fc2096482f5cfc39965e33f1ae4448b9da3d183de507ee2ef577161  assets/gui/source/components/126127.png
+          61b217c6d94d0df24594282e877106beaec96c26adea45ebb0b163414cfb60e9  assets/gui/source/components/126128.png
+          3719d7109f4f0021496120286085322a54e6e7d4daa452401e30d9ed26ae371e  assets/gui/source/components/126129.png
+          6273fd21208e942f3834ef8c18f8ec6924a7888ee0cb5d10f64bc84d7fedb11a  assets/gui/source/components/126130.png
+          19ace1060a21b846dff940e0ce0ae2e961209b636f1c882b77739a21d8aeb156  assets/gui/source/components/126131.png
+          030ad6253023cfb87683cea5c05736c432746862f8a464197c635e5d2e086018  assets/gui/source/components/126133.png
+          e970b48d453359f900152b65916681888db7d0214a27c2672623b6da88179ba4  assets/gui/source/components/126134.png
+          297e1b434750c74422485608c9f63af53fc60e24bf7c116212cfff68fb2d788e  assets/gui/source/components/126138.png
+          3ed771b4130b3edadb6a94346eb22b47c88b50256c49c5544f6919ee699665b8  assets/gui/source/references/126112.png
+          cb765d99d5126fa9294af580acc7850522162636ed753845bae82c75ee32be6f  assets/gui/source/references/126120.png
+          df4c9f36cf2b7dd2ed7b46b360aae8e56579924e20614959b56bef8a56a7fea4  assets/gui/source/references/126122.png
+          4a30d2cdba14ca1d8736a410c660f20dfff6131a8b477a6707afe7f87eafb43e  assets/gui/source/references/126124.png
+          640e340bdbf82f44ce27e7c42083007b0b29cd6e46b92d57a559679c18a33050  assets/gui/source/references/126126.png
+          EOF
+          sha256sum -c "$RUNNER_TEMP/gui-source.sha256"
+          cp "$RUNNER_TEMP/gui-source.sha256" "$RUNNER_TEMP/source-hashes.txt"
+
+      - name: Import project and capture real 1536x864 game frames
+        run: |
+          set -euo pipefail
+          godot --headless --path . --editor --import 2>&1 | tee "$RUNNER_TEMP/gui-import.log"
+          if ! command -v xvfb-run >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+          xvfb-run -a -s "-screen 0 1536x864x24" godot --path . --resolution 1536x864 --windowed --script res://tests/gui_capture.gd 2>&1 | tee "$RUNNER_TEMP/gui-capture.log"
+          grep -Fq 'GUI_CAPTURE_OK 5 actual + 5 comparisons at 1536x864' "$RUNNER_TEMP/gui-capture.log"
+          if grep -Eq 'SCRIPT ERROR|Parse Error|ERROR:' "$RUNNER_TEMP"/gui-{import,capture}.log; then
+            exit 1
+          fi
+          test "$(find gui-artifacts/actual -maxdepth 1 -type f -name '*.png' | wc -l)" -eq 5
+          test "$(find gui-artifacts/comparison -maxdepth 1 -type f -name '*.png' | wc -l)" -eq 5
+          for f in gui-artifacts/actual/*.png; do
+            file "$f" | grep -Fq '1536 x 864'
+          done
+          for f in gui-artifacts/comparison/*.png; do
+            file "$f" | grep -Fq '3072 x 864'
+          done
+          cp "$RUNNER_TEMP/source-hashes.txt" gui-artifacts/source-hashes.txt
+
+      - name: Publish actual and reference-vs-actual GUI captures
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: TAMU-GUI-visual-${{ github.sha }}
+          path: gui-artifacts/
+          if-no-files-found: error
+          retention-days: 14
+
+
   android-package:
     if: ${{ github.event_name == 'workflow_dispatch' }}
     needs: headless

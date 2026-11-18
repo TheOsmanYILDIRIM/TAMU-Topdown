@@ -5,15 +5,18 @@ extends Button
 
 const UNKNOWN := -1
 const NONE := -2
-const MIN_TOUCH_SIZE := 48
-const GuiAssets = preload("res://scripts/tamu_gui_assets.gd")
+const MIN_TOUCH_SIZE := 40
+const SourceAssets = preload("res://scripts/tamu_gui_source_assets.gd")
 
-@export_range(16, 128) var visual_size: int = 44:
+@export_range(16, 128) var visual_size: int = 40:
 	set(value):
 		visual_size = value
 		_fit_box()
 		_layout_visuals()
-@export var accent := Color("#d2a65a")
+@export var visual_kind: StringName = &"hotbar":
+	set(value):
+		visual_kind = value
+		refresh()
 @export var quantity: int = UNKNOWN:
 	set(value):
 		quantity = value
@@ -61,13 +64,13 @@ func _ready() -> void:
 	_item.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_item.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	add_child(_item)
-	_quantity_badge = GuiAssets.nine_patch(&"quantity_badge")
+	_quantity_badge = SourceAssets.nine_patch(&"quantity_badge")
 	add_child(_quantity_badge)
 	_quantity = Label.new()
 	_quantity.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_quantity.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_quantity.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	GuiAssets.apply_text(_quantity, 11)
+	SourceAssets.apply_text(_quantity, 9)
 	_quantity_badge.add_child(_quantity)
 	_layout_visuals()
 	refresh()
@@ -81,28 +84,31 @@ func _layout_visuals() -> void:
 		return
 	_background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_item.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_item.offset_left = 7.0
-	_item.offset_top = 7.0
-	_item.offset_right = -7.0
-	_item.offset_bottom = -7.0
+	_item.offset_left = 6.0
+	_item.offset_top = 6.0
+	_item.offset_right = -6.0
+	_item.offset_bottom = -6.0
 	_quantity_badge.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_quantity_badge.offset_left = -31.0
-	_quantity_badge.offset_top = -19.0
-	_quantity_badge.offset_right = -3.0
-	_quantity_badge.offset_bottom = -3.0
+	_quantity_badge.offset_left = -27.0
+	_quantity_badge.offset_top = -16.0
+	_quantity_badge.offset_right = -2.0
+	_quantity_badge.offset_bottom = -2.0
 	_quantity.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 func refresh() -> void:
 	if not is_instance_valid(_background):
 		return
-	_background.texture = GuiAssets.texture(&"slot_selected" if selected else &"slot_normal")
-	_background.modulate = Color.WHITE if not disabled else GuiAssets.DIM_COLOR
+	if visual_kind == &"inventory":
+		_background.texture = SourceAssets.texture(&"inventory_slot")
+	else:
+		_background.texture = SourceAssets.texture(&"slot_selected" if selected else &"slot_normal")
+	_background.modulate = Color.WHITE if not disabled else SourceAssets.DIM_COLOR
 	_item.texture = item_texture
-	_item.modulate = Color.WHITE if not disabled else GuiAssets.DIM_COLOR
+	_item.modulate = Color.WHITE if not disabled else SourceAssets.DIM_COLOR
 	_quantity_badge.visible = quantity != NONE
 	if _quantity_badge.visible:
 		_quantity.text = "…" if quantity == UNKNOWN else str(maxi(0, quantity))
-		_quantity_badge.modulate = Color.WHITE if not disabled else GuiAssets.DIM_COLOR
+		_quantity_badge.modulate = Color.WHITE if not disabled else SourceAssets.DIM_COLOR
 	accessibility_name = caption if quantity == NONE else "%s %s" % [caption, _quantity.text]
 
 func touch_hit(point: Vector2) -> bool:
