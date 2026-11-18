@@ -2,7 +2,7 @@ name: Godot startup and gameplay tests
 on:
   push:
     branches: [main]
-    paths: ['project.godot', 'scenes/**', 'scripts/**', 'tests/**', 'addons/**', 'assets/**', 'data/**', 'save_system/**', 'tools/better_tile_editor/**', '.github/workflows/godot-tests.yml']
+    paths: ['project.godot', 'export_presets.cfg', 'scenes/**', 'scripts/**', 'tests/**', 'addons/**', 'assets/**', 'data/**', 'save_system/**', 'tools/better_tile_editor/**', '.github/workflows/godot-tests.yml']
   workflow_dispatch:
 
 permissions:
@@ -364,3 +364,75 @@ jobs:
     defaults:
       run:
         shell: bash
+
+
+  android-package:
+    needs: headless
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Install verified Godot 4.7.2
+        run: |
+          set -euo pipefail
+          archive=Godot_v4.7.2-stable_linux.x86_64.zip
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/$archive" "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/$archive"
+          printf '%s  %s\n' 9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65 "$RUNNER_TEMP/$archive" | sha512sum --check
+          unzip -q "$RUNNER_TEMP/$archive" -d "$RUNNER_TEMP/godot-bin"
+          mv "$RUNNER_TEMP/godot-bin/Godot_v4.7.2-stable_linux.x86_64" "$RUNNER_TEMP/godot-bin/godot"
+          chmod +x "$RUNNER_TEMP/godot-bin/godot"
+          "$RUNNER_TEMP/godot-bin/godot" --version | grep -E '^4\.7\.2\.stable\.'
+          echo "$RUNNER_TEMP/godot-bin" >> "$GITHUB_PATH"
+
+      - name: Install verified official Android export template
+        run: |
+          set -euo pipefail
+          archive=Godot_v4.7.2-stable_export_templates.tpz
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/$archive" "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/$archive"
+          printf '%s  %s\n' f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011 "$RUNNER_TEMP/$archive" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/godot-template-extract" "$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          unzip -q "$RUNNER_TEMP/$archive" 'templates/android_debug.apk' -d "$RUNNER_TEMP/godot-template-extract"
+          install -m 0644 "$RUNNER_TEMP/godot-template-extract/templates/android_debug.apk" "$HOME/.local/share/godot/export_templates/4.7.2.stable/android_debug.apk"
+          test -s "$HOME/.local/share/godot/export_templates/4.7.2.stable/android_debug.apk"
+
+      - name: Prepare Android SDK and debug signing key
+        run: |
+          set -euo pipefail
+          test -n "${ANDROID_HOME:-}"
+          test -d "$ANDROID_HOME"
+          export JAVA_HOME="${JAVA_HOME_17_X64:-$JAVA_HOME}"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "build-tools;35.0.0"
+          mkdir -p "$HOME/.local/share/godot/keystores"
+          if [ ! -s "$HOME/.local/share/godot/keystores/debug.keystore" ]; then
+            keytool -genkeypair -v -keystore "$HOME/.local/share/godot/keystores/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: Export and verify Android debug APK
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/tamu-apk"
+          godot --headless --path . --editor --import 2>&1 | tee "$RUNNER_TEMP/tamu-android-import.log"
+          godot --headless --path . --export-debug "Android Debug" "$RUNNER_TEMP/tamu-apk/TAMU-debug.apk" 2>&1 | tee "$RUNNER_TEMP/tamu-android-export.log"
+          if grep -Eq 'SCRIPT ERROR|Parse Error' "$RUNNER_TEMP"/tamu-android-{import,export}.log; then
+            exit 1
+          fi
+          test -s "$RUNNER_TEMP/tamu-apk/TAMU-debug.apk"
+          unzip -t "$RUNNER_TEMP/tamu-apk/TAMU-debug.apk" >/dev/null
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$RUNNER_TEMP/tamu-apk/TAMU-debug.apk" | tee "$RUNNER_TEMP/tamu-apksigner.log"
+          sha256sum "$RUNNER_TEMP/tamu-apk/TAMU-debug.apk" | tee "$RUNNER_TEMP/tamu-apk/TAMU-debug.apk.sha256"
+
+      - name: Publish Android debug APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: TAMU-Android-debug
+          path: |
+            ${{ runner.temp }}/tamu-apk/TAMU-debug.apk
+            ${{ runner.temp }}/tamu-apk/TAMU-debug.apk.sha256
+          if-no-files-found: error
+          retention-days: 14
