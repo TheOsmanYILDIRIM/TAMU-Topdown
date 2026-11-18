@@ -53,7 +53,12 @@ func is_rendering() -> bool:
 
 
 func camera_world_position() -> Vector2:
-	return camera_2d.global_position if is_node_ready() else Vector2.ZERO
+	if not is_node_ready():
+		return Vector2.ZERO
+	# Keep coordinate queries accurate while hidden without re-enabling viewport
+	# rendering or continuous processing.
+	_sync_target()
+	return camera_2d.global_position
 
 
 func marker_screen_position() -> Vector2:
