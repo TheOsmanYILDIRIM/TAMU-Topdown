@@ -221,7 +221,13 @@ SOHBET-10 | Settings + Menus — **tamamlandı / doğrulandı**.
 
 ### Rapor 11
 
-SOHBET-11 | What’s Code Mini Map — önceki kabulü bekliyor.
+SOHBET-11 | What’s Code Mini Map — hazır. Rapor 10’un `edb586a` commit’i ve Actions 44184349501 ham günlükleri bağımsız doğrulandı: 38/38; sonrasında yalnız rapor değişti.
+
+**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; dal veya PR açma. Güncel HEAD, AGENTS.md, README.md ve mevcut `tamu-topdown-bootstrap` görevini doğrula. Kaynak `Msumri/minimap`, sabit commit `f2b947cba4659632c9be0c3cb2c76b97e8a85a33`; [yazarın Godot Asset Library yayını](https://godotengine.org/asset-library/asset/4983) bu arşivi MIT olarak listeliyor. Kök LICENSE bulunmadı; paket ve dosya bildirimlerini kontrol et, özgün atıf ve lisans bilgisini koru, doğrulanmamış görselleri alma. Başlangıç yolları `addons/minimap/minimap.gd` ve `addons/minimap/minimap.tscn`. Sadece gerekli 2D çekirdeği kullan, demo ve ayrı veri/harita sistemi getirme.
+
+**Hedef ve kapsam:** Açılıp kapanabilen küçük mini harita; oyuncuyu yerel değil dünya koordinatıyla izle. Gizlendiğinde SubViewport güncellemesini kapat, tekrar görünürken etkinleştir. Dünya dokunuşu, Gohud güvenli alanı ve Pause/Audio/çanta geri önceliğini bozma. Yalnız mini harita dosyaları/adaptörü, gerekli HUD ve prototype bağlantıları, testler ve mevcut CI kapsamı. Kayıt ve envanter şemasına dokunma.
+
+**Kabul:** Önceki 38 testi koru. GitHub Actions’ta oyuncu işaretçisi/izleme, dönüştürülmüş üst düğüm altında koordinat doğruluğu, gizli viewport çiziminin durması/açılınca sürmesi ve mini harita kontrol dokunuşunun dünyaya sızmamasını doğrula. Açık/kapalı kare süresini gerçek Android cihazında ölçebilirsen ayrı kaydet; ölçemiyorsan bekliyor olarak belirt, headless testi performans kanıtı sayma. Kod commit’i, Actions sonucu ve kaynak/lisansı yalnız Rapor 11’e yaz ve geri oku. Mükerrer Beyin görevi açma.
 
 ### Rapor 12
 
