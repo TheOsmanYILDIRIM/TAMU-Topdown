@@ -205,16 +205,23 @@ func _build_hotbar() -> void:
 	_hotbar_divider = _texture_rect(&"v_divider", TextureRect.STRETCH_SCALE)
 	add_child(_hotbar_divider)
 	bag_toggle = TextureButton.new()
-	bag_toggle.texture_normal = SourceAssets.texture(&"bag_icon")
-	bag_toggle.texture_pressed = bag_toggle.texture_normal
+	bag_toggle.texture_normal = SourceAssets.texture(&"square_button")
+	bag_toggle.texture_pressed = SourceAssets.texture(&"square_button_active")
 	bag_toggle.texture_hover = bag_toggle.texture_normal
 	bag_toggle.ignore_texture_size = true
-	bag_toggle.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	bag_toggle.stretch_mode = TextureButton.STRETCH_SCALE
 	bag_toggle.custom_minimum_size = Vector2(HOTBAR_SLOT_SIZE, HOTBAR_SLOT_SIZE)
 	bag_toggle.focus_mode = Control.FOCUS_NONE
 	bag_toggle.mouse_filter = Control.MOUSE_FILTER_STOP
 	bag_toggle.tooltip_text = "Inventory"
 	bag_toggle.accessibility_name = "Inventory"
+	var bag_icon := _texture_rect(&"bag_icon")
+	bag_icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bag_icon.offset_left = 6.0
+	bag_icon.offset_top = 5.0
+	bag_icon.offset_right = -6.0
+	bag_icon.offset_bottom = -5.0
+	bag_toggle.add_child(bag_icon)
 	bag_toggle.pressed.connect(toggle_bag)
 	add_child(bag_toggle)
 
@@ -690,7 +697,7 @@ func _layout() -> void:
 	bag_toggle.position = Vector2(_hotbar_divider.position.x + 9.0, row_y)
 	bag_toggle.size = Vector2(HOTBAR_SLOT_SIZE, HOTBAR_SLOT_SIZE)
 	_layout_storage_panel()
-	var pause_height := 204.0 if audio_open else 126.0
+	var pause_height := 212.0 if audio_open else 126.0
 	pause_panel.size = Vector2(minf(272.0, area.size.x - 16.0), minf(pause_height, area.size.y - 12.0))
 	pause_panel.position = area.position + (area.size - pause_panel.size) * 0.5
 	_pause_close_button.position = Vector2(pause_panel.size.x - 34.0, 6.0)
@@ -744,8 +751,8 @@ func _layout_storage_panel() -> void:
 		bag_grid.size = Vector2(grid_width, minf(grid_height, panel_height - 54.0))
 		chest_grid.position = Vector2(panel_width - grid_width - 14.0, 48.0)
 		chest_grid.size = Vector2(grid_width, minf(grid_height, panel_height - 54.0))
-		_section_title_plate.position = Vector2(14.0 + (grid_width - 96.0) * 0.5, 23.0)
-		_section_title_plate.size = Vector2(96.0, 25.0)
+		_section_title_plate.position = Vector2(14.0 + (grid_width - 112.0) * 0.5, 23.0)
+		_section_title_plate.size = Vector2(112.0, 25.0)
 	else:
 		bag_grid.position = Vector2((panel_width - grid_width) * 0.5, 46.0)
 		bag_grid.size = Vector2(grid_width, minf(grid_height, panel_height - 52.0))
