@@ -27,6 +27,7 @@ const SaveAdapter = preload("res://scripts/save_adapter.gd")
 @onready var attack_window: Timer = $AttackWindow
 @onready var interaction_feedback: TamuInteractionFeedbackAdapter = $InteractionFeedback
 @onready var mobile_hud: TamuGohudAdapter = $HUD/MobileHud
+@onready var mini_map: TamuMiniMapAdapter = $HUD/MiniMap
 
 var selected: StringName = &""
 var inventory: TamuInventoryBridge
@@ -51,6 +52,7 @@ func _ready() -> void:
 	load_button.pressed.connect(_on_load_pressed)
 	mobile_hud.bag_to_chest_requested.connect(_on_bag_to_chest_pressed)
 	mobile_hud.chest_to_bag_requested.connect(_on_chest_to_bag_pressed)
+	mini_map.set_target(player)
 	attack_hit_box.hurt_box_entered.connect(_on_attack_hurt_box_entered)
 	attack_window.timeout.connect(_on_attack_window_timeout)
 	attack_window.wait_time = ATTACK_WINDOW_SECONDS

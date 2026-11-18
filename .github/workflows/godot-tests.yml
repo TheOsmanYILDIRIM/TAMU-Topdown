@@ -102,11 +102,15 @@ jobs:
               "test_settings_missing_or_corrupt_file_uses_safe_audio_defaults",
               "test_settings_back_priority_closes_audio_pause_then_bag",
               "test_settings_touch_pause_is_consumed_before_world_input",
+              "test_minimap_tracks_player_marker_in_world_coordinates",
+              "test_minimap_uses_world_coordinates_under_transformed_parent",
+              "test_minimap_hidden_viewport_stops_and_resumes_rendering",
+              "test_minimap_toggle_touch_is_consumed_before_world_input",
           }
           passed = {case.attrib.get("name") for case in cases if not any(case.find(x) is not None for x in ("failure", "error", "skipped"))}
           if not expected <= passed:
               raise SystemExit(f"Missing passing tests: {expected - passed}; recorded: {passed}")
-          print("Verified all thirty-eight required JUnit test cases passed.")
+          print("Verified all forty-two required JUnit test cases passed.")
           PY
     defaults:
       run:

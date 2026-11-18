@@ -1016,3 +1016,70 @@ func _remove_settings_files(path: String) -> void:
 	for candidate: String in [path, path + ".tmp", path + ".bak"]:
 		if FileAccess.file_exists(candidate):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(candidate))
+
+
+func test_minimap_tracks_player_marker_in_world_coordinates() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	room.player.position = Vector2(236.0, 212.0)
+	await tree.process_frame
+
+	assert_bool(room.mini_map.camera_world_position().distance_to(room.player.global_position) < 0.01).is_true()
+	assert_bool(room.mini_map.marker_screen_position().distance_to(Vector2(80.0, 45.0)) < 0.01).is_true()
+
+
+func test_minimap_uses_world_coordinates_under_transformed_parent() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	room.position = Vector2(73.0, 41.0)
+	room.rotation = 0.17
+	room.scale = Vector2(1.25, 0.8)
+	room.player.position = Vector2(180.0, 210.0)
+	await tree.process_frame
+
+	assert_bool(room.player.global_position.distance_to(room.player.position) > 1.0).is_true()
+	assert_bool(room.mini_map.camera_world_position().distance_to(room.player.global_position) < 0.01).is_true()
+
+
+func test_minimap_hidden_viewport_stops_and_resumes_rendering() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	assert_bool(room.mini_map.map_open).is_true()
+	assert_bool(room.mini_map.is_rendering()).is_true()
+	room.mini_map.set_map_open(false)
+	assert_bool(room.mini_map.map_open).is_false()
+	assert_bool(room.mini_map.is_rendering()).is_false()
+
+	room.player.position = Vector2(320.0, 220.0)
+	room.mini_map.set_map_open(true)
+	await tree.process_frame
+	assert_bool(room.mini_map.map_open).is_true()
+	assert_bool(room.mini_map.is_rendering()).is_true()
+	assert_bool(room.mini_map.camera_world_position().distance_to(room.player.global_position) < 0.01).is_true()
+
+
+func test_minimap_toggle_touch_is_consumed_before_world_input() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.player.stop_walking()
+	var start := room.player.position
+	var toggle_point := room.mini_map.toggle_touch_point()
+
+	await _tap_control(room, toggle_point)
+	for frame: int in range(8):
+		await tree.physics_frame
+
+	assert_bool(room.mini_map.map_open).is_false()
+	assert_bool(room.player.position.distance_to(start) < 0.01).is_true()
+	assert_str(String(room.selected)).is_empty()
