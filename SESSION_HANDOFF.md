@@ -221,13 +221,19 @@ SOHBET-10 | Settings + Menus — **tamamlandı / doğrulandı**.
 
 ### Rapor 11
 
-SOHBET-11 | What’s Code Mini Map — hazır. Rapor 10’un `edb586a` commit’i ve Actions 44184349501 ham günlükleri bağımsız doğrulandı: 38/38; sonrasında yalnız rapor değişti.
+SOHBET-11 | What’s Code Mini Map — **tamamlandı / doğrulandı**.
 
-**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; dal veya PR açma. Güncel HEAD, AGENTS.md, README.md ve mevcut `tamu-topdown-bootstrap` görevini doğrula. Kaynak `Msumri/minimap`, sabit commit `f2b947cba4659632c9be0c3cb2c76b97e8a85a33`; [yazarın Godot Asset Library yayını](https://godotengine.org/asset-library/asset/4983) bu arşivi MIT olarak listeliyor. Kök LICENSE bulunmadı; paket ve dosya bildirimlerini kontrol et, özgün atıf ve lisans bilgisini koru, doğrulanmamış görselleri alma. Başlangıç yolları `addons/minimap/minimap.gd` ve `addons/minimap/minimap.tscn`. Sadece gerekli 2D çekirdeği kullan, demo ve ayrı veri/harita sistemi getirme.
+**Teslim:** Başlangıç HEAD `99b9b200d6bef058737a5984dd4691452a239c53`. Doğrulanan kod HEAD’i `fc87c565c4c493307acd84ee0fe362c01aab69d2` ([commit](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/commit/fc87c565c4c493307acd84ee0fe362c01aab69d2)); mini harita entegrasyonunun ilk kod commit’i `4f3cf512f202a53b7aaf486fb8e66c864746995e`, ardından dünya dokunuşunu kapatmayan son düzeltme `fc87c565...` ile doğrulandı. Dal veya PR açılmadı; `main` üzerinde çalışıldı.
 
-**Hedef ve kapsam:** Açılıp kapanabilen küçük mini harita; oyuncuyu yerel değil dünya koordinatıyla izle. Gizlendiğinde SubViewport güncellemesini kapat, tekrar görünürken etkinleştir. Dünya dokunuşu, Gohud güvenli alanı ve Pause/Audio/çanta geri önceliğini bozma. Yalnız mini harita dosyaları/adaptörü, gerekli HUD ve prototype bağlantıları, testler ve mevcut CI kapsamı. Kayıt ve envanter şemasına dokunma.
+**Kaynak / lisans:** `Msumri/minimap` sabit commit `f2b947cba4659632c9be0c3cb2c76b97e8a85a33` kullanıldı. Paket içindeki `addons/minimap/LICENSE` MIT lisansı (Copyright (c) 2026 Al Harthy) TAMU’ya aynen taşındı. Demo görselleri/sahneleri ve ayrı harita/veri sistemi alınmadı; yalnız 2D çekirdek uyarlaması kullanıldı.
 
-**Kabul:** Önceki 38 testi koru. GitHub Actions’ta oyuncu işaretçisi/izleme, dönüştürülmüş üst düğüm altında koordinat doğruluğu, gizli viewport çiziminin durması/açılınca sürmesi ve mini harita kontrol dokunuşunun dünyaya sızmamasını doğrula. Açık/kapalı kare süresini gerçek Android cihazında ölçebilirsen ayrı kaydet; ölçemiyorsan bekliyor olarak belirt, headless testi performans kanıtı sayma. Kod commit’i, Actions sonucu ve kaynak/lisansı yalnız Rapor 11’e yaz ve geri oku. Mükerrer Beyin görevi açma.
+**Uygulama:** Mini harita oyuncuyu `target.global_position` üzerinden, hedefin `World2D` bağlamını paylaşarak izliyor; dönüştürülmüş üst düğüm altında yerel koordinata düşmüyor. Harita gizlenince `SubViewport.UPDATE_DISABLED` ve işlem kapatılıyor; açılınca `UPDATE_ALWAYS` ile yeniden etkinleşip hedefe senkronlanıyor. Harita görüntüsü dünya dokunuşunu engellemiyor; yalnız aç/kapat kontrolü dokunuşu tüketiyor. Mevcut Gohud güvenli alanı ile Pause/Audio/çanta geri önceliği değiştirilmedi.
+
+**GitHub Actions:** [44265180706](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/actions/runs/44265180706), job `134667821729`, `fc87c565c4c493307acd84ee0fe362c01aab69d2` için **success**. Godot `4.7.2.stable.official.ed1daf0bf` headless başlangıç/import geçti. GdUnit4 sonucu **42/42**: 0 error, 0 failure, 0 skipped, 0 orphan. Önceki 38 test korunarak mini harita kabul testleri de geçti: oyuncu işaretçisi/dünya koordinatı takibi, dönüştürülmüş üst düğüm altında koordinat doğruluğu, gizliyken viewport çiziminin durması ve açılınca sürmesi, mini harita kontrol dokunuşunun dünyaya sızmaması.
+
+**Android performans:** Gerçek Android cihazında açık/kapalı mini harita kare süresi ölçülmedi; bu ölçüm **bekliyor**. Headless Actions sonucu Android performans kanıtı olarak değerlendirilmedi.
+
+**Rapor:** [SESSION_HANDOFF.md#rapor-11](https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/blob/main/SESSION_HANDOFF.md#rapor-11)
 
 ### Rapor 12
 
