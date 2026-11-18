@@ -21,11 +21,13 @@ func _initialize() -> void:
 func _capture_sequence() -> void:
 	for frame: int in range(6):
 		await process_frame
+	print("GUI_CAPTURE gameplay")
 	await _capture("gameplay", "126112.png")
 
 	room.mobile_hud.open_bag()
 	for frame: int in range(3):
 		await process_frame
+	print("GUI_CAPTURE inventory")
 	await _capture("inventory", "126120.png")
 	room.mobile_hud.close_bag()
 
@@ -34,6 +36,7 @@ func _capture_sequence() -> void:
 	room.mobile_hud.open_bag()
 	for frame: int in range(3):
 		await process_frame
+	print("GUI_CAPTURE chest")
 	await _capture("chest", "126122.png")
 	room.mobile_hud.close_bag()
 
@@ -41,12 +44,14 @@ func _capture_sequence() -> void:
 	room.mobile_hud.open_audio()
 	for frame: int in range(3):
 		await process_frame
+	print("GUI_CAPTURE pause-audio")
 	await _capture("pause-audio", "126124.png")
 	room.mobile_hud.resume_game()
 
 	room.mini_map.set_map_open(true)
 	for frame: int in range(6):
 		await process_frame
+	print("GUI_CAPTURE map")
 	await _capture("map", "126126.png")
 	room.mini_map.set_map_open(false)
 
@@ -54,7 +59,9 @@ func _capture_sequence() -> void:
 	quit(0)
 
 func _capture(name: String, reference_name: String) -> void:
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw(false)
+	await process_frame
+	RenderingServer.force_draw(false)
 	var actual := root.get_texture().get_image()
 	if actual.get_size() != TARGET_SIZE:
 		push_error("Unexpected GUI capture size for %s: %s" % [name, actual.get_size()])
