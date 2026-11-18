@@ -40,15 +40,20 @@ func _author_native_resources() -> int:
 	atlas.create_tile(Vector2i.ZERO)
 	tile_set.add_source(atlas, 0)
 
-	BetterTerrain.set_single_tile(tile_set, 0, Vector2i.ZERO)
+	var terrain_tool := get_root().get_node_or_null("BetterTerrain")
+	if terrain_tool == null:
+		return ERR_DOES_NOT_EXIST
+	terrain_tool.call("set_single_tile", tile_set, 0, Vector2i.ZERO)
 	var layer := TileMapLayer.new()
 	layer.name = "Ground"
 	layer.tile_set = tile_set
-	if not BetterTerrain.set_cells(
+	var placed := bool(terrain_tool.call(
+		"set_cells",
 		layer,
 		[Vector2i(2, 1)],
-		BetterTerrain.TileCategory.SINGLE
-	):
+		-4
+	))
+	if not placed:
 		layer.free()
 		return FAILED
 
