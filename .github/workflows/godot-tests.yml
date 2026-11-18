@@ -2,7 +2,7 @@ name: Godot startup and gameplay tests
 on:
   push:
     branches: [main]
-    paths: ['project.godot', 'scenes/**', 'scripts/**', 'tests/**', 'addons/**', 'data/**', 'save_system/**', 'tools/better_tile_editor/**', '.github/workflows/godot-tests.yml']
+    paths: ['project.godot', 'scenes/**', 'scripts/**', 'tests/**', 'addons/**', 'assets/**', 'data/**', 'save_system/**', 'tools/better_tile_editor/**', '.github/workflows/godot-tests.yml']
   workflow_dispatch:
 
 permissions:
@@ -328,11 +328,30 @@ jobs:
               raise SystemExit(f"Missing passing tests: {expected - passed}; recorded: {passed}")
           print("Verified all forty-two required JUnit test cases passed.")
           PY
+          rm -rf reports
           godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests/gui_integration_test.gd --ignoreHeadlessMode 2>&1 | tee "$RUNNER_TEMP/tamu-gui-gdunit.log"
           if grep -Eq 'SCRIPT ERROR|Parse Error' "$RUNNER_TEMP/tamu-gui-gdunit.log"; then
             exit 1
           fi
-          grep -Eq '7 tests|Tests: *7|test_gui_' "$RUNNER_TEMP/tamu-gui-gdunit.log"
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+          reports = list(Path("reports").rglob("*.xml"))
+          cases = [case for report in reports for case in ET.parse(report).iter("testcase")]
+          expected = {
+              "test_gui_reference_slot_counts_are_display_only",
+              "test_gui_visible_slot_counts_can_change_without_inventory_migration",
+              "test_gui_inventory_reflows_inside_injected_safe_area",
+              "test_gui_survival_values_are_drawn_from_live_game_state",
+              "test_gui_does_not_fabricate_missing_item_icon",
+              "test_gui_map_screen_is_componentized_and_render_on_demand",
+              "test_gui_legacy_debug_controls_are_not_part_of_runtime_hud",
+          }
+          passed = {case.attrib.get("name") for case in cases if not any(case.find(x) is not None for x in ("failure", "error", "skipped"))}
+          if not expected <= passed:
+              raise SystemExit(f"Missing passing GUI tests: {expected - passed}; recorded: {passed}")
+          print("Verified all seven GUI integration JUnit cases passed.")
+          PY
 
       - name: Publish verified native SpriteFrames sample
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

@@ -1,12 +1,16 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "source_delivery": "TAMU_GUI_SOHBET16_FINAL.zip",
   "handoff_sha256": "209f69d17ae812ae3e2730866726e1c60648d8f60c1c3bdf56c0cd0a79f138e9",
-  "atlas": {
-    "path": "res://assets/gui/tamu_gui_atlas.png",
-    "sha256": "7fc1fb63f0123a0fba50ef1a728686939427f01aa2de6e6f309d15addb40c06e",
-    "size": [512, 608],
-    "processing": "Approved transparent components only: technical crop, alpha residue below 10/255 cleared, scaled to 0.5, indexed PNG with transparency retained. No generated artwork."
+  "processing": "Approved transparent PNG components only. Technical crop, alpha residue below 10/255 cleared, 0.5 scale, 128-color indexed PNG sheets embedded as GDScript base64 for deterministic Godot/Android loading. No generated or redrawn artwork.",
+  "embedded_sheets": {
+    "hud_frames": "63fb258d89608ee613a824ea8e041cac61d1bf914713f387eae18452ee948fc2",
+    "hud_icons": "825a08cf98fb6da9c9f40bfa53710dd6a49af89392ef326b38974c1890b0421c",
+    "map_frame": "77be074b9305ce14850659e17d28a1f5913315ad0c7931f99cf054b37cdb6792",
+    "menu_atlas": "c56b1da22212c324dc5739e1010c1c0b802e784d4fa48d517aac176defdaceb0",
+    "slider_atlas": "b1f061d3608bcc06c6b04681b97c4eb2c52f34c5db1f5f96fb25f178726e7b58",
+    "slot_misc": "c456171c02b74a34677640c6680cfba76aaa33ae43ae52d1db4c4c2b24d50bcd",
+    "window_panel": "d42ef4f1c8d09a114bd3437c454b233473f19ad161f546745fa767626dceee3b"
   },
   "reference_sha256": {
     "126112.png": "3ed771b4130b3edadb6a94346eb22b47c88b50256c49c5544f6919ee699665b8",
