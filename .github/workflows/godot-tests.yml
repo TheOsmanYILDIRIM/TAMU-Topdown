@@ -398,6 +398,12 @@ jobs:
           install -m 0644 "$RUNNER_TEMP/godot-template-extract/templates/android_debug.apk" "$HOME/.local/share/godot/export_templates/4.7.2.stable/android_debug.apk"
           test -s "$HOME/.local/share/godot/export_templates/4.7.2.stable/android_debug.apk"
 
+      - name: Set up Android SDK command-line tools
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          packages: 'platform-tools build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
+
       - name: Prepare Android SDK and debug signing key
         run: |
           set -euo pipefail
@@ -406,8 +412,9 @@ jobs:
           export JAVA_HOME="${JAVA_HOME_17_X64:-$JAVA_HOME}"
           echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
           echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "build-tools;35.0.0"
+          command -v sdkmanager
+          command -v adb
+          test -x "$ANDROID_HOME/build-tools/35.0.0/apksigner"
           mkdir -p "$HOME/.local/share/godot/keystores"
           if [ ! -s "$HOME/.local/share/godot/keystores/debug.keystore" ]; then
             keytool -genkeypair -v -keystore "$HOME/.local/share/godot/keystores/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
