@@ -328,6 +328,15 @@ jobs:
               raise SystemExit(f"Missing passing tests: {expected - passed}; recorded: {passed}")
           print("Verified all forty-two required JUnit test cases passed.")
           PY
+
+      - name: Publish verified native SpriteFrames sample
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-spriteframes-sample
+          path: |
+            ${{ runner.temp }}/spriteframes-clean/sample.svg
+            ${{ runner.temp }}/spriteframes-clean/sample_frames.tres
+          if-no-files-found: error
     defaults:
       run:
         shell: bash
