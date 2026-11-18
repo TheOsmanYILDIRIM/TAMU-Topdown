@@ -1053,6 +1053,10 @@ func test_minimap_hidden_viewport_stops_and_resumes_rendering() -> void:
 	_attach_to_test_viewport(room, tree)
 	await tree.process_frame
 
+	assert_bool(room.mini_map.map_open).is_false()
+	assert_bool(room.mini_map.is_rendering()).is_false()
+	room.mini_map.set_map_open(true)
+	await tree.process_frame
 	assert_bool(room.mini_map.map_open).is_true()
 	assert_bool(room.mini_map.is_rendering()).is_true()
 	room.mini_map.set_map_open(false)
@@ -1080,6 +1084,6 @@ func test_minimap_toggle_touch_is_consumed_before_world_input() -> void:
 	for frame: int in range(8):
 		await tree.physics_frame
 
-	assert_bool(room.mini_map.map_open).is_false()
+	assert_bool(room.mini_map.map_open).is_true()
 	assert_bool(room.player.position.distance_to(start) < 0.01).is_true()
 	assert_str(String(room.selected)).is_empty()

@@ -2,99 +2,172 @@ extends Control
 class_name TamuMiniMapAdapter
 
 const MiniMapScene = preload("res://addons/minimap/minimap.tscn")
+const GuiAssets = preload("res://scripts/tamu_gui_assets.gd")
 
 var map_core: TamuMiniMapCore
-var toggle_button: Button
-var map_open: bool = true
-
+var toggle_button: TextureButton
+var map_open := false
+var _overlay: ColorRect
+var _panel: Control
+var _close_button: TextureButton
+var _map_frame: NinePatchRect
+var _north_indicator: TextureRect
+var _player_marker: TextureRect
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build()
 	get_viewport().size_changed.connect(_layout)
 	_layout()
-
+	set_map_open(false)
 
 func _build() -> void:
+	_overlay = ColorRect.new()
+	_overlay.color = Color(0.025, 0.02, 0.015, 0.64)
+	_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_overlay.z_index = 30
+	add_child(_overlay)
+	_panel = Control.new()
+	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_panel.z_index = 31
+	_overlay.add_child(_panel)
+	var window_art := GuiAssets.nine_patch(&"window_panel")
+	window_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_panel.add_child(window_art)
+	var title_plate := GuiAssets.nine_patch(&"title_plaque")
+	title_plate.position = Vector2(116.0, -10.0)
+	title_plate.size = Vector2(148.0, 38.0)
+	_panel.add_child(title_plate)
+	var title := Label.new()
+	title.text = "Map"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	GuiAssets.apply_text(title, 15)
+	title.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	title_plate.add_child(title)
+	_close_button = TextureButton.new()
+	_close_button.texture_normal = GuiAssets.texture(&"close_icon")
+	_close_button.texture_pressed = _close_button.texture_normal
+	_close_button.texture_hover = _close_button.texture_normal
+	_close_button.ignore_texture_size = true
+	_close_button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	_close_button.focus_mode = Control.FOCUS_NONE
+	_close_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	_close_button.pressed.connect(func() -> void: set_map_open(false))
+	_panel.add_child(_close_button)
+	_map_frame = GuiAssets.nine_patch(&"map_frame")
+	_panel.add_child(_map_frame)
 	map_core = MiniMapScene.instantiate() as TamuMiniMapCore
 	map_core.name = "Core"
 	map_core.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(map_core)
-
-	toggle_button = Button.new()
+	_map_frame.add_child(map_core)
+	_north_indicator = _icon(&"north_indicator")
+	_player_marker = _icon(&"player_marker")
+	_map_frame.add_child(_north_indicator)
+	_map_frame.add_child(_player_marker)
+	toggle_button = TextureButton.new()
 	toggle_button.name = "Toggle"
-	toggle_button.text = "Hide Map"
-	toggle_button.custom_minimum_size = Vector2(76.0, 36.0)
+	toggle_button.ignore_texture_size = true
+	toggle_button.stretch_mode = TextureButton.STRETCH_SCALE
+	toggle_button.custom_minimum_size = Vector2(42.0, 42.0)
 	toggle_button.focus_mode = Control.FOCUS_NONE
 	toggle_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	toggle_button.tooltip_text = "Mini-map"
+	toggle_button.accessibility_name = "Mini-map"
+	toggle_button.z_index = 35
+	var icon := _icon(&"map_icon")
+	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	icon.offset_left = 8.0
+	icon.offset_top = 8.0
+	icon.offset_right = -8.0
+	icon.offset_bottom = -8.0
+	toggle_button.add_child(icon)
 	toggle_button.pressed.connect(toggle_map)
 	add_child(toggle_button)
+	_overlay.visible = false
 
+func _icon(name: StringName) -> TextureRect:
+	var result := TextureRect.new()
+	result.texture = GuiAssets.texture(name)
+	result.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	result.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	result.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	return result
 
 func set_target(value: Node2D) -> void:
 	if map_core != null:
 		map_core.set_target(value)
 
-
 func toggle_map() -> void:
 	set_map_open(not map_open)
 
-
 func set_map_open(value: bool) -> void:
 	map_open = value
+	if _overlay != null:
+		_overlay.visible = value
 	if map_core != null:
 		map_core.set_map_visible(value)
 	if toggle_button != null:
-		toggle_button.text = "Hide Map" if value else "Map"
+		toggle_button.texture_normal = GuiAssets.texture(&"square_button_active" if value else &"square_button")
+		toggle_button.texture_pressed = GuiAssets.texture(&"square_button_active")
+		toggle_button.texture_hover = toggle_button.texture_normal
+	_layout()
 
+func handle_back_event(event: InputEvent) -> bool:
+	if not map_open or not (event is InputEventKey and event.pressed and not event.echo):
+		return false
+	if event.keycode != KEY_ESCAPE and event.keycode != KEY_BACK:
+		return false
+	set_map_open(false)
+	return true
 
 func is_rendering() -> bool:
 	return map_core != null and map_core.is_rendering()
 
-
 func camera_world_position() -> Vector2:
 	return map_core.camera_world_position() if map_core != null else Vector2.ZERO
-
 
 func marker_screen_position() -> Vector2:
 	return map_core.marker_screen_position() if map_core != null else Vector2.ZERO
 
-
 func toggle_touch_point() -> Vector2:
-	if toggle_button == null:
-		return Vector2.ZERO
-	return toggle_button.position + toggle_button.size * 0.5
+	return toggle_button.position + toggle_button.size * 0.5 if toggle_button != null else Vector2.ZERO
 
+func map_panel_rect() -> Rect2:
+	return _panel.get_rect() if _panel != null else Rect2()
 
 func _effective_safe_rect() -> Rect2:
-	var viewport_area := Rect2(Vector2.ZERO, get_viewport_rect().size)
+	var area := Rect2(Vector2.ZERO, get_viewport_rect().size)
 	var window := get_window()
 	if window != null and get_viewport() == window:
 		var safe := GoSafeArea.usable_rect(window)
 		if safe.size.x > 1.0 and safe.size.y > 1.0:
 			return safe
-	return viewport_area
-
+	return area
 
 func _layout() -> void:
-	if map_core == null or toggle_button == null:
+	if map_core == null or toggle_button == null or _panel == null:
 		return
 	var area := _effective_safe_rect()
 	if area.size.x <= 1.0 or area.size.y <= 1.0:
 		return
-	var margin := 8.0
-	var toggle_size := Vector2(76.0, 36.0)
-	var map_size := Vector2(160.0, 90.0)
-	var x := area.position.x + margin
-	var toggle_y := minf(area.end.y - toggle_size.y - margin, area.position.y + 84.0)
-	toggle_button.position = Vector2(x, maxf(area.position.y + margin, toggle_y))
-	toggle_button.size = toggle_size
-	map_core.position = Vector2(
-		x,
-		minf(area.end.y - map_size.y - margin, toggle_button.position.y + toggle_size.y + 4.0)
-	)
-	map_core.size = map_size
+	var button_size := Vector2(42.0, 42.0)
+	toggle_button.position = Vector2(area.end.x - button_size.x - 8.0, area.position.y + 8.0)
+	toggle_button.size = button_size
+	var panel_size := Vector2(minf(400.0, area.size.x - 20.0), minf(250.0, area.size.y - 22.0))
+	_panel.size = panel_size
+	_panel.position = area.position + (area.size - panel_size) * 0.5
+	_close_button.position = Vector2(panel_size.x - 35.0, 7.0)
+	_close_button.size = Vector2(30.0, 30.0)
+	_map_frame.position = Vector2(14.0, 38.0)
+	_map_frame.size = Vector2(panel_size.x - 28.0, panel_size.y - 52.0)
+	map_core.position = Vector2(12.0, 12.0)
+	map_core.size = _map_frame.size - Vector2(24.0, 24.0)
+	_north_indicator.position = Vector2(18.0, 17.0)
+	_north_indicator.size = Vector2(28.0, 44.0)
+	_player_marker.size = Vector2(28.0, 28.0)
+	_player_marker.position = (_map_frame.size - _player_marker.size) * 0.5

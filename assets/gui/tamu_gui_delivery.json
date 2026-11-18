@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "source_delivery": "TAMU_GUI_SOHBET16_FINAL.zip",
+  "handoff_sha256": "209f69d17ae812ae3e2730866726e1c60648d8f60c1c3bdf56c0cd0a79f138e9",
+  "atlas": {
+    "path": "res://assets/gui/tamu_gui_atlas.png",
+    "sha256": "7fc1fb63f0123a0fba50ef1a728686939427f01aa2de6e6f309d15addb40c06e",
+    "size": [512, 608],
+    "processing": "Approved transparent components only: technical crop, alpha residue below 10/255 cleared, scaled to 0.5, indexed PNG with transparency retained. No generated artwork."
+  },
+  "reference_sha256": {
+    "126112.png": "3ed771b4130b3edadb6a94346eb22b47c88b50256c49c5544f6919ee699665b8",
+    "126120.png": "cb765d99d5126fa9294af580acc7850522162636ed753845bae82c75ee32be6f",
+    "126122.png": "df4c9f36cf2b7dd2ed7b46b360aae8e56579924e20614959b56bef8a56a7fea4",
+    "126124.png": "4a30d2cdba14ca1d8736a410c660f20dfff6131a8b477a6707afe7f87eafb43e",
+    "126126.png": "640e340bdbf82f44ce27e7c42083007b0b29cd6e46b92d57a559679c18a33050"
+  },
+  "visible_slot_reference": {
+    "hotbar": 4,
+    "inventory_screen": 21,
+    "chest_player_side": 15,
+    "chest_storage_side": 15,
+    "capacity_policy": "Only hotbar=4 is approved. Inventory/chest slot counts are visual-reference counts and never change Rubonnek data capacity without explicit user approval."
+  }
+}

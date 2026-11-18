@@ -1,6 +1,4 @@
-## Narrow TAMU runtime adaptation of gohud GoSlotGrid v1.3.0.
-## Source: thruthesky/gohud@5d48e694d572625dcd3a7d22bd2a2357c6b78c32 (MIT).
-## This widget owns only display state. Rubonnek InventoryManager remains authoritative.
+## TAMU runtime adaptation of gohud GoSlotGrid v1.3.0; display-only.
 @tool
 class_name GoSlotGrid
 extends HFlowContainer
@@ -11,13 +9,11 @@ signal slot_pressed(index: int)
 	set(value):
 		slot_count = maxi(0, value)
 		_rebuild()
-
 @export_range(16, 96) var cell_size := 48:
 	set(value):
 		cell_size = value
 		for cell: GoSlot in _cells:
 			cell.visual_size = cell_size
-
 @export var draggable := false
 @export var keyboard_focus := false:
 	set(value):
@@ -30,10 +26,8 @@ var selected := -1:
 		selected = value if value >= 0 and value < slot_count else -1
 		for index: int in range(_cells.size()):
 			_cells[index].selected = index == selected
-
 var _cells: Array[GoSlot] = []
 var _data: Array[Dictionary] = []
-
 
 func _init() -> void:
 	name = "SlotGrid"
@@ -42,20 +36,16 @@ func _init() -> void:
 	alignment = FlowContainer.ALIGNMENT_CENTER
 	_data.resize(slot_count)
 
-
 func _ready() -> void:
 	add_theme_constant_override(&"h_separation", 4)
 	add_theme_constant_override(&"v_separation", 4)
 	_rebuild()
 
-
 func slot(index: int) -> GoSlot:
 	return _cells[index] if index >= 0 and index < _cells.size() else null
 
-
 func cell(index: int) -> Dictionary:
 	return _data[index] if index >= 0 and index < _data.size() else {}
-
 
 func set_cell(index: int, data: Dictionary) -> void:
 	if index < 0 or index >= slot_count:
@@ -64,12 +54,10 @@ func set_cell(index: int, data: Dictionary) -> void:
 	if index < _cells.size():
 		_paint(index)
 
-
 func set_cells(list: Array) -> void:
 	for index: int in range(slot_count):
 		var value: Variant = list[index] if index < list.size() else null
 		set_cell(index, value if value is Dictionary else {})
-
 
 func _rebuild() -> void:
 	_data.resize(slot_count)
@@ -93,18 +81,16 @@ func _rebuild() -> void:
 	if selected >= slot_count:
 		selected = -1
 
-
 func _paint(index: int) -> void:
 	var made := _cells[index]
 	var data := _data[index]
 	made.quantity = int(data["quantity"]) if data.has("quantity") else GoSlot.NONE
 	made.caption = str(data.get("caption", ""))
-	made.accent = data.get("accent", Color("#d2a65a")) as Color
+	made.item_texture = data.get("icon", null) as Texture2D
 	made.disabled = bool(data.get("disabled", false))
 	made.tooltip_text = str(data.get("tooltip", ""))
 	made.selected = index == selected
 	made.refresh()
-
 
 func _on_pressed(index: int) -> void:
 	slot_pressed.emit(index)

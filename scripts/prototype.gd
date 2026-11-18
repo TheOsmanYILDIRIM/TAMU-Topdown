@@ -53,6 +53,7 @@ func _ready() -> void:
 	mobile_hud.bag_to_chest_requested.connect(_on_bag_to_chest_pressed)
 	mobile_hud.chest_to_bag_requested.connect(_on_chest_to_bag_pressed)
 	mini_map.set_target(player)
+	mobile_hud.bind_survival(player.health, $SurvivalStats as SurvivalStats, $DayNightClock as DayNightClock)
 	attack_hit_box.hurt_box_entered.connect(_on_attack_hurt_box_entered)
 	attack_window.timeout.connect(_on_attack_window_timeout)
 	attack_window.wait_time = ATTACK_WINDOW_SECONDS
@@ -62,6 +63,9 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if mini_map != null and mini_map.handle_back_event(event):
+		get_viewport().set_input_as_handled()
+		return
 	if mobile_hud != null and mobile_hud.handle_back_event(event):
 		get_viewport().set_input_as_handled()
 		return

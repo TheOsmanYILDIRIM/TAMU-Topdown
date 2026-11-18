@@ -257,7 +257,7 @@ jobs:
           pin=d18770221c2df4a3c991a42fdce7907df40eea75
           work="$RUNNER_TEMP/tamu-test"
           mkdir -p "$work/addons"
-          cp -R project.godot scenes scripts tests addons data save_system state_machine "$work/"
+          cp -R project.godot scenes scripts tests addons assets data save_system state_machine "$work/"
           rm "$work/tests/.gdignore"
           git init -q "$RUNNER_TEMP/gdunit-source"
           git -C "$RUNNER_TEMP/gdunit-source" fetch --quiet --depth=1 https://github.com/godot-gdunit-labs/gdUnit4.git "$pin"
@@ -328,6 +328,11 @@ jobs:
               raise SystemExit(f"Missing passing tests: {expected - passed}; recorded: {passed}")
           print("Verified all forty-two required JUnit test cases passed.")
           PY
+          godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests/gui_integration_test.gd --ignoreHeadlessMode 2>&1 | tee "$RUNNER_TEMP/tamu-gui-gdunit.log"
+          if grep -Eq 'SCRIPT ERROR|Parse Error' "$RUNNER_TEMP/tamu-gui-gdunit.log"; then
+            exit 1
+          fi
+          grep -Eq '7 tests|Tests: *7|test_gui_' "$RUNNER_TEMP/tamu-gui-gdunit.log"
 
       - name: Publish verified native SpriteFrames sample
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
