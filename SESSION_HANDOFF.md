@@ -237,13 +237,16 @@ SOHBET-11 | What’s Code Mini Map — **tamamlandı / doğrulandı**.
 
 ### Rapor 12
 
-SOHBET-12 | Better Tile Editor — hazır. Rapor 11’in `fc87c56` commit’i ve Actions 44265180706 ham günlükleri bağımsız doğrulandı: 42/42; sonraki commit yalnız teslim raporunu değiştirdi. Android mini harita performans ölçümü açık kalır; editör entegrasyonu bunu kapatmaz.
+SOHBET-12 | Better Tile Editor — tamamlandı ve doğrulandı.
 
-**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; dal veya PR açma. Güncel HEAD, AGENTS.md, README.md ve mevcut `tamu-topdown-bootstrap` görevini oku. Kaynak `cidwel/BetterTileEditor` v0.3.0, sabit commit `67ce337a2b7f56dec46ac4ad40ec90e2ffca2b9d`; `addons/better-tile-editor/plugin.cfg` ve aynı dizindeki `LICENSE.md` doğrulandı. Bu sürüm MPL-2.0; eski sürümün GPLv3 ilanını bu sürüme uygulama. Lisans ve gerekli atıfları koru.
-
-**Hedef ve sınır:** Aracı harita üretmek için yalnız editör tarafında kullan. Küçük, özgün/geçici bir örnek döşemeyle yerel Godot `TileSet` ve `TileMapLayer` çıktısı üret. BetterTerrain autoload’u veya addon scripti oyun projesine çalışma zamanı bağımlılığı olarak kalmasın. Gerekirse aracı CI’nın izole editör kopyasında kur, çıkan native kaynakları eklentisiz kopyada doğrula. Demo, eski TAMU görselleri ve SpriteFrames Batch Importer bu kapsamda yok. Mevcut oynanış sahnesini veya veri sözleşmelerini değiştirme.
-
-**Kabul ve teslim:** GitHub Actions’ta mevcut 42 testi koru; Godot 4.7.2 editör importunu ve en az bir örnek karonun doğru hücreye yazılıp tekrar açılmasını doğrula. Örnek sahne eklenti ve BetterTerrain autoload’u olmadan import edilip açılabilsin; gerçek editör etkileşimi veya APK doğrulanmadıysa ayrı belirt. Kod commit’i, başarılı Actions sonucu, sabit kaynak/lisans ve geri okuma kanıtını yalnız Rapor 12’ye yaz. Mükerrer Beyin görevi açma.
+- **Doğrulanan kod HEAD:** `af7d253d20ba0b4446ab93fd40f2cebea7755a6f` — https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/commit/af7d253d20ba0b4446ab93fd40f2cebea7755a6f
+- **Kaynak sabitlemesi:** `cidwel/BetterTileEditor` v0.3.0, commit `67ce337a2b7f56dec46ac4ad40ec90e2ffca2b9d`. `addons/better-tile-editor/plugin.cfg` sürümü 0.3.0 olarak ve `addons/better-tile-editor/LICENSE.md` Mozilla Public License 2.0 olarak sabit commit’ten doğrulandı. Better Tile Editor’ın BetterTerrain/Portponky atfı korunuyor; BetterTerrain upstream lisansı The Unlicense.
+- **Uygulama:** Better Tile Editor oyun projesine runtime addon olarak eklenmedi. `tools/better_tile_editor/` yalnız GitHub Actions’taki izole editör-authoring kopyası için tutuluyor ve ana Godot taramasından `.gdignore` ile ayrılıyor. CI sabit eklentiyi geçici projeye çekiyor, BetterTerrain editör/autoload yoluyla özgün 16×16 örnek döşemeyi `TileMapLayer` hücresi `Vector2i(2, 1)` konumuna yazıyor, araç metadatasını temizleyip native `TileSet` + `TileMapLayer` kaynaklarını kaydediyor.
+- **Eklentisiz geri açma:** İkinci temiz Godot 4.7.2 projesinde `addons/better-tile-editor` bulunmadığı ve `autoload/BetterTerrain` olmadığı doğrulandı. Üretilen kaynaklarda `better-tile-editor`, `BetterTerrain` veya `_better_terrain` bağı kalmadığı kontrol edildi. Temiz proje `native_map.tscn` dosyasını açtı; `Ground` düğümü native `TileMapLayer`, `TileSet` mevcut, tek kullanılan hücre `Vector2i(2, 1)`, source id `0`, atlas koordinatı `Vector2i.ZERO`. Log kanıtları: `BTE_NATIVE_AUTHOR_OK` ve `BTE_NATIVE_CLEAN_OPEN_OK`.
+- **GitHub Actions:** run `44267742370`, job `134676362462`, başarılı — https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/actions/runs/44267742370 . Godot `4.7.2.stable` headless editör importu geçti; GdUnit4 sonucu `42 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans`, `42/42`; ayrıca workflow “Verified all forty-two required JUnit test cases passed.” kaydını üretti.
+- **Kapsam koruması:** `scenes/prototype.tscn` SHA `22a6670a852cca36bc650b0580098a89962d4f1f`, `project.godot` SHA `cd5bd01cc469f9c4c7a4b95f101a8a761337ea4c` ve `tests/prototype_test.gd` SHA `ab6280737f02084de4113bfe04c9b1a73419f66d` başlangıç HEAD `048997d0111fa3da11eb620b24af66d9fc3d94a9` ile doğrulanan kod HEAD arasında değişmedi. Oynanış sahnesi ve mevcut 42 test değiştirilmedi.
+- **Doğrulanmayan ayrı yüzeyler:** Gerçek Godot GUI editöründe elle çizim ve Android/APK cihaz doğrulaması yapılmadı; kabul kanıtı GitHub Actions’taki Godot 4.7.2 headless editör-authoring ve temiz native geri açma testidir.
+- **Rapor bağlantısı:** https://github.com/TheOsmanYILDIRIM/TAMU-Topdown/blob/main/SESSION_HANDOFF.md#rapor-12
 
 ### Rapor 13
 
