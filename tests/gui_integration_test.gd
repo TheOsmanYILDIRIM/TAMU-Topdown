@@ -119,6 +119,6 @@ func test_gui_runtime_textures_use_original_component_pngs_not_reference_screens
 	var slot := SourceAssets.texture(&"slot_normal") as AtlasTexture
 	assert_bool(slot != null).is_true()
 	assert_bool(slot.atlas != null).is_true()
-	assert_str(slot.atlas.resource_path).starts_with("res://assets/gui/source/components/")
+	assert_bool(slot.atlas.resource_path.starts_with("res://assets/gui/source/components/")).is_true()
 	assert_bool(not slot.atlas.resource_path.contains("/references/")).is_true()
 	assert_bool(FileAccess.file_exists("res://assets/gui/source/references/126112.png")).is_true()

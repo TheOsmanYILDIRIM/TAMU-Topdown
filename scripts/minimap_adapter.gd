@@ -64,8 +64,8 @@ func _build() -> void:
 	map_core = MiniMapScene.instantiate() as TamuMiniMapCore
 	map_core.name = "Core"
 	map_core.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	map_core.stretch = true
 	_map_frame.add_child(map_core)
+	map_core.stretch = true
 	if map_core.marker != null:
 		map_core.marker.visible = false
 	if map_core.border != null:
