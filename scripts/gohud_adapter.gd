@@ -141,10 +141,10 @@ func _build_survival_hud() -> void:
 	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	survival_panel.add_child(art)
 	var x := 7.0
-	x = _add_survival_need(x, &"bar_health", _health_segments)
-	x = _add_survival_need(x, &"bar_hunger", _hunger_segments)
-	x = _add_survival_need(x, &"bar_thirst", _thirst_segments)
-	var day_icon := _texture_rect(&"map_icon")
+	x = _add_survival_need(x, &"health_icon", &"bar_health", _health_segments)
+	x = _add_survival_need(x, &"hunger_icon", &"bar_hunger", _hunger_segments)
+	x = _add_survival_need(x, &"thirst_icon", &"bar_thirst", _thirst_segments)
+	var day_icon := _texture_rect(&"day_icon")
 	day_icon.position = Vector2(x + 1.0, 8.0)
 	day_icon.size = Vector2(15.0, 17.0)
 	day_icon.modulate = Color("#d4b266")
@@ -157,8 +157,8 @@ func _build_survival_hud() -> void:
 	SourceAssets.apply_text(day_label, 9)
 	survival_panel.add_child(day_label)
 
-func _add_survival_need(x: float, fill_name: StringName, row: Array[TextureRect]) -> float:
-	var icon := _texture_rect(fill_name)
+func _add_survival_need(x: float, icon_name: StringName, fill_name: StringName, row: Array[TextureRect]) -> float:
+	var icon := _texture_rect(icon_name)
 	icon.position = Vector2(x, 8.0)
 	icon.size = Vector2(17.0, 17.0)
 	survival_panel.add_child(icon)
@@ -188,7 +188,8 @@ func _sync_survival_controls() -> void:
 func _update_segment_row(row: Array[TextureRect], ratio: float, fill_name: StringName) -> void:
 	var filled := clampi(ceili(clampf(ratio, 0.0, 1.0) * float(SURVIVAL_SEGMENTS)), 0, SURVIVAL_SEGMENTS)
 	for index: int in range(row.size()):
-		row[index].texture = SourceAssets.texture(fill_name if index < filled else &"bar_inactive")
+		row[index].texture = SourceAssets.texture(fill_name)
+		row[index].modulate = Color.WHITE if index < filled else Color(0.26, 0.24, 0.20, 0.68)
 
 func _build_hotbar() -> void:
 	hotbar_frame = Control.new()
