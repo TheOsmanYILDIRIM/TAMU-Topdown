@@ -237,7 +237,13 @@ SOHBET-11 | What’s Code Mini Map — **tamamlandı / doğrulandı**.
 
 ### Rapor 12
 
-SOHBET-12 | Better Tile Editor — önceki kabulü bekliyor.
+SOHBET-12 | Better Tile Editor — hazır. Rapor 11’in `fc87c56` commit’i ve Actions 44265180706 ham günlükleri bağımsız doğrulandı: 42/42; sonraki commit yalnız teslim raporunu değiştirdi. Android mini harita performans ölçümü açık kalır; editör entegrasyonu bunu kapatmaz.
+
+**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; dal veya PR açma. Güncel HEAD, AGENTS.md, README.md ve mevcut `tamu-topdown-bootstrap` görevini oku. Kaynak `cidwel/BetterTileEditor` v0.3.0, sabit commit `67ce337a2b7f56dec46ac4ad40ec90e2ffca2b9d`; `addons/better-tile-editor/plugin.cfg` ve aynı dizindeki `LICENSE.md` doğrulandı. Bu sürüm MPL-2.0; eski sürümün GPLv3 ilanını bu sürüme uygulama. Lisans ve gerekli atıfları koru.
+
+**Hedef ve sınır:** Aracı harita üretmek için yalnız editör tarafında kullan. Küçük, özgün/geçici bir örnek döşemeyle yerel Godot `TileSet` ve `TileMapLayer` çıktısı üret. BetterTerrain autoload’u veya addon scripti oyun projesine çalışma zamanı bağımlılığı olarak kalmasın. Gerekirse aracı CI’nın izole editör kopyasında kur, çıkan native kaynakları eklentisiz kopyada doğrula. Demo, eski TAMU görselleri ve SpriteFrames Batch Importer bu kapsamda yok. Mevcut oynanış sahnesini veya veri sözleşmelerini değiştirme.
+
+**Kabul ve teslim:** GitHub Actions’ta mevcut 42 testi koru; Godot 4.7.2 editör importunu ve en az bir örnek karonun doğru hücreye yazılıp tekrar açılmasını doğrula. Örnek sahne eklenti ve BetterTerrain autoload’u olmadan import edilip açılabilsin; gerçek editör etkileşimi veya APK doğrulanmadıysa ayrı belirt. Kod commit’i, başarılı Actions sonucu, sabit kaynak/lisans ve geri okuma kanıtını yalnız Rapor 12’ye yaz. Mükerrer Beyin görevi açma.
 
 ### Rapor 13
 
