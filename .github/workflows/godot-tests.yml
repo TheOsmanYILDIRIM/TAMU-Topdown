@@ -367,6 +367,7 @@ jobs:
 
 
   android-package:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     needs: headless
     runs-on: ubuntu-latest
     timeout-minutes: 30

@@ -1,0 +1,71 @@
+name: Import approved GUI source PNGs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'TAMU_GUI_SOHBET16_FINAL.zip'
+      - '.github/workflows/gui-source-import.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  import-approved-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Verify and copy approved source PNGs byte-for-byte
+        run: |
+          set -euo pipefail
+          test -s TAMU_GUI_SOHBET16_FINAL.zip
+          rm -rf "$RUNNER_TEMP/tamu-gui-source"
+          mkdir -p "$RUNNER_TEMP/tamu-gui-source"
+          unzip -q TAMU_GUI_SOHBET16_FINAL.zip -d "$RUNNER_TEMP/tamu-gui-source"
+          src="$RUNNER_TEMP/tamu-gui-source/TAMU_GUI_SOHBET16_FINAL"
+          test -f "$src/SOHBET17_HANDOFF.md"
+          test -f "$src/SHA256SUMS.txt"
+          grep -Fq 'Tam ekran ana referanslar' "$src/SOHBET17_HANDOFF.md"
+          grep -Fq 'Onaylı component PNG’leri' "$src/SOHBET17_HANDOFF.md"
+          test "$(find "$src/components" -maxdepth 1 -type f -name '*.png' | wc -l)" -eq 14
+          test "$(find "$src/references" -maxdepth 1 -type f -name '*.png' | wc -l)" -eq 5
+          (cd "$src" && sha256sum -c SHA256SUMS.txt)
+
+          rm -rf assets/gui/source/components assets/gui/source/references
+          mkdir -p assets/gui/source/components assets/gui/source/references
+          cp "$src/components/"*.png assets/gui/source/components/
+          cp "$src/references/"*.png assets/gui/source/references/
+
+          for f in "$src/components/"*.png; do
+            dest="assets/gui/source/components/$(basename "$f")"
+            cmp -s "$f" "$dest"
+          done
+          for f in "$src/references/"*.png; do
+            dest="assets/gui/source/references/$(basename "$f")"
+            cmp -s "$f" "$dest"
+          done
+
+          while read -r digest rel; do
+            case "$rel" in
+              components/*.png|references/*.png)
+                printf '%s  %s\n' "$digest" "assets/gui/source/$rel" | sha256sum -c -
+                ;;
+            esac
+          done < "$src/SHA256SUMS.txt"
+
+      - name: Commit approved source PNGs
+        run: |
+          set -euo pipefail
+          git add assets/gui/source/components assets/gui/source/references
+          if git diff --cached --quiet; then
+            echo 'Approved source PNGs already match.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Import approved SOHBET-16 GUI source PNGs'
+          git push origin HEAD:main
