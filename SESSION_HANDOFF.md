@@ -250,4 +250,10 @@ SOHBET-12 | Better Tile Editor — tamamlandı ve doğrulandı.
 
 ### Rapor 13
 
-SOHBET-13 | SpriteFrames Batch Importer — önceki kabulü bekliyor.
+SOHBET-13 | SpriteFrames Batch Importer — hazır. Rapor 12’nin `af7d253` kod commit’i ve Actions `44267742370` iş günlükleri bağımsız doğrulandı: native harita eklentisiz açıldı ve 42/42 test geçti.
+
+**Brif:** Yalnız `TheOsmanYILDIRIM/TAMU-Topdown/main`; yeni dal veya PR açma. Godot Asset Library’de minato’nun SpriteFrames Batch Importer 0.1.1 sürümü MIT olarak listeleniyor. Uygulamadan önce upstream kaynak, lisans dosyası ve tam commit’i doğrula ve sabitle.
+
+**Hedef ve sınır:** Eklentiyi yalnız izole editör kopyasında kullan. Yönleri ve kareleri birbirinden ayırt edilebilen yeni, özgün/deterministik bir örnek sprite sheet ile native Godot `SpriteFrames` üret. Eski TAMU görsellerini taşıma; oynanış sahnesini ve çalışma zamanı yapılandırmasını değiştirme.
+
+**Kabul ve teslim:** GitHub Actions’ta mevcut 42 testi koru. Üretilen animasyonların adlarını, yön eşleşmesini, kare sayısını ve kare sırası/atlas bölgelerini doğrula. Native çıktıyı eklenti veya autoload bulunmayan temiz Godot projesinde açıp `AnimatedSprite2D` ile yüklenebildiğini doğrula. Kod commit’i, kaynak ve lisans, Actions sonucu ve geri okuma kanıtını yalnız Rapor 13’e işle. Android/APK ve elle editör doğrulaması yapılmadıysa ayrı belirt.
