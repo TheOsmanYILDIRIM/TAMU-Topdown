@@ -104,6 +104,153 @@ jobs:
             echo "Generated native resources retained an editor-addon dependency."
             exit 1
           fi
+
+      # MIT: https://github.com/Minato-chen/godot-spriteframes-batch-importer/blob/6a728af784dcc9affb01622374f9ae6d967421f2/addons/spriteframes_batch_importer/LICENSE
+      - name: SpriteFrames Batch Importer editor authoring and plugin-free AnimatedSprite2D
+        run: |
+          set -euo pipefail
+          pin=6a728af784dcc9affb01622374f9ae6d967421f2
+          source_dir="$RUNNER_TEMP/spriteframes-source"
+          author="$RUNNER_TEMP/spriteframes-author"
+          clean="$RUNNER_TEMP/spriteframes-clean"
+          addon=addons/spriteframes_batch_importer
+
+          git init -q "$source_dir"
+          git -C "$source_dir" fetch --quiet --depth=1 https://github.com/Minato-chen/godot-spriteframes-batch-importer.git "$pin"
+          test "$(git -C "$source_dir" rev-parse FETCH_HEAD)" = "$pin"
+          mkdir -p "$author" "$clean"
+          git -C "$source_dir" archive "$pin" "$addon" | tar -x -C "$author"
+          grep -Fxq 'MIT License' "$author/$addon/LICENSE"
+          grep -Fxq 'Copyright (c) 2026 CHEN YANGGANG' "$author/$addon/LICENSE"
+
+          cat > "$clean/project.godot" <<'EOF'
+          config_version=5
+
+          [application]
+          config/name="Native SpriteFrames smoke"
+
+          [rendering]
+          renderer/rendering_method="gl_compatibility"
+          EOF
+          cp "$clean/project.godot" "$author/project.godot"
+          cat >> "$author/project.godot" <<'EOF'
+
+          [editor_plugins]
+          enabled=PackedStringArray("res://addons/spriteframes_batch_importer/plugin.cfg")
+          EOF
+
+          # Four direction palettes, five distinct pose markers, one blank spacer column.
+          python3 - "$author/sample.svg" <<'PY'
+          from pathlib import Path
+          import sys
+
+          shapes = ['<svg xmlns="http://www.w3.org/2000/svg" width="62" height="43" viewBox="0 0 62 43">']
+          for row, color in enumerate(("#df5544", "#4baa67", "#557fe0", "#d9ae36")):
+              for column in (0, 1, 3, 4, 5):
+                  x, y = 2 + 10 * column, 3 + 10 * row
+                  shapes.append(f'<rect x="{x}" y="{y}" width="8" height="8" fill="{color}"/>')
+                  shapes.append(f'<rect x="{x + column + 1}" y="{y + 3}" width="1" height="2" fill="#ffffff"/>')
+          shapes.append("</svg>")
+          Path(sys.argv[1]).write_text("\n".join(shapes), encoding="utf-8")
+          PY
+
+          cat > "$author/author.gd" <<'EOF'
+          extends SceneTree
+
+          const Generator = preload("res://addons/spriteframes_batch_importer/spriteframes_generator.gd")
+
+          func _initialize() -> void:
+              var sheet := load("res://sample.svg") as Texture2D
+              if sheet == null:
+                  push_error("Could not import fixture texture")
+                  quit(1)
+                  return
+              var states: Array[Dictionary] = [
+                  {"name": "idle", "frame_count": 2, "loop": true, "fps": 6.0, "start_column": 0},
+                  {"name": "walk", "frame_count": 3, "loop": true, "fps": 10.0, "start_column": 3},
+              ]
+              var directions: Array[Dictionary] = [
+                  {"name": "left", "row": 2}, {"name": "down", "row": 1},
+                  {"name": "right", "row": 0}, {"name": "up", "row": 3},
+              ]
+              var frames: SpriteFrames = Generator.new().build(
+                  sheet, Vector2i(8, 8), Vector2i(2, 3), Vector2i(2, 2), states, directions
+              )
+              var result := ResourceSaver.save(frames, "res://sample_frames.tres")
+              if result != OK:
+                  push_error("SpriteFrames save failed: %s" % error_string(result))
+                  quit(1)
+                  return
+              quit(0)
+          EOF
+
+          cat > "$clean/verify.gd" <<'EOF'
+          extends SceneTree
+
+          const ROWS := {"right": 0, "down": 1, "left": 2, "up": 3}
+          const COLUMNS := {"idle": [0, 1], "walk": [3, 4, 5]}
+
+          func _initialize() -> void:
+              var sprite := AnimatedSprite2D.new()
+              root.add_child.call_deferred(sprite)
+              _verify.call_deferred(sprite)
+
+          func _verify(sprite: AnimatedSprite2D) -> void:
+              var error := _check(sprite)
+              sprite.free()
+              if not error.is_empty():
+                  push_error(error)
+                  quit(1)
+                  return
+              print("Verified 8 animations and 20 ordered atlas frames in plugin-free AnimatedSprite2D.")
+              quit(0)
+
+          func _check(sprite: AnimatedSprite2D) -> String:
+              var frames := load("res://sample_frames.tres") as SpriteFrames
+              if frames == null or frames.get_animation_names().size() != 8:
+                  return "Expected a native resource with exactly eight animations"
+              sprite.sprite_frames = frames
+              for state: String in COLUMNS:
+                  var columns: Array = COLUMNS[state]
+                  for direction: String in ROWS:
+                      var name := StringName(state + "_" + direction)
+                      var count := columns.size()
+                      if not frames.has_animation(name) or frames.get_frame_count(name) != count:
+                          return "Incorrect animation name or frame count: %s" % name
+                      sprite.play(name)
+                      if not sprite.is_playing() or sprite.animation != name:
+                          return "AnimatedSprite2D did not play %s" % name
+                      for index in count:
+                          var column: int = columns[index]
+                          var row: int = ROWS[direction]
+                          var expected := Rect2(2 + 10 * column, 3 + 10 * row, 8, 8)
+                          var frame := frames.get_frame_texture(name, index) as AtlasTexture
+                          if frame == null or frame.region != expected or frame.atlas == null:
+                              return "Incorrect direction or frame order: %s[%d]" % [name, index]
+                          if frame.atlas.resource_path != "res://sample.svg":
+                              return "Unexpected atlas dependency: %s[%d]" % [name, index]
+                          sprite.set_frame_and_progress(index, 0.0)
+                          if sprite.frame != index:
+                              return "AnimatedSprite2D did not select %s[%d]" % [name, index]
+              return ""
+          EOF
+
+          godot --headless --path "$author" --editor --import 2>&1 | tee "$RUNNER_TEMP/spriteframes-editor.log"
+          godot --headless --path "$author" -s res://author.gd 2>&1 | tee "$RUNNER_TEMP/spriteframes-author.log"
+          test -s "$author/sample_frames.tres"
+
+          cp "$author/sample.svg" "$author/sample_frames.tres" "$clean/"
+          test ! -e "$clean/addons"
+          if grep -Eq '^\[(autoload|editor_plugins)\]' "$clean/project.godot" ||
+             grep -Eq 'res://addons/|type="Script"' "$clean/sample_frames.tres"; then
+            exit 1
+          fi
+          godot --headless --path "$clean" --editor --import 2>&1 | tee "$RUNNER_TEMP/spriteframes-import.log"
+          godot --headless --path "$clean" -s res://verify.gd 2>&1 | tee "$RUNNER_TEMP/spriteframes-verify.log"
+          if grep -Eq 'SCRIPT ERROR|Parse Error|ERROR:' "$RUNNER_TEMP"/spriteframes-{editor,author,import,verify}.log; then
+            exit 1
+          fi
+
       # MIT: https://github.com/godot-gdunit-labs/gdUnit4/blob/d18770221c2df4a3c991a42fdce7907df40eea75/LICENSE
       - name: Install GdUnit4 v6.2.0 into a CI-only project copy
         run: |
