@@ -70,9 +70,11 @@ func test_gui_survival_values_are_drawn_from_live_game_state() -> void:
 	await tree.process_frame
 	assert_str(room.mobile_hud.day_label.text).is_equal("Day 7")
 	var health_filled := 0
+	var bar_health_entry: Array = GuiAssets.REGIONS[&"bar_health"]
+	var bar_health_region: Rect2 = bar_health_entry[1]
 	for segment: TextureRect in room.mobile_hud._health_segments:
 		var atlas := segment.texture as AtlasTexture
-		if atlas != null and atlas.region == GuiAssets.REGIONS[&"bar_health"]:
+		if atlas != null and atlas.region == bar_health_region:
 			health_filled += 1
 	assert_int(health_filled).is_equal(3)
 
