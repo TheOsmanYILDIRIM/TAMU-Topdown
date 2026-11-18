@@ -418,7 +418,7 @@ jobs:
       - name: Import project and capture real 1536x864 game frames
         run: |
           set -euo pipefail
-          godot --headless --path . --editor --import 2>&1 | tee "$RUNNER_TEMP/gui-import.log"
+          godot --headless --path . --editor --import --quit-after 10 2>&1 | tee "$RUNNER_TEMP/gui-import.log"
           if ! command -v xvfb-run >/dev/null; then
             sudo apt-get update
             sudo apt-get install -y xvfb
