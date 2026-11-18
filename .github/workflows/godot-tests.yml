@@ -346,11 +346,12 @@ jobs:
               "test_gui_does_not_fabricate_missing_item_icon",
               "test_gui_map_screen_is_componentized_and_render_on_demand",
               "test_gui_legacy_debug_controls_are_not_part_of_runtime_hud",
+              "test_gui_runtime_textures_use_original_component_pngs_not_reference_screens",
           }
           passed = {case.attrib.get("name") for case in cases if not any(case.find(x) is not None for x in ("failure", "error", "skipped"))}
           if not expected <= passed:
               raise SystemExit(f"Missing passing GUI tests: {expected - passed}; recorded: {passed}")
-          print("Verified all seven GUI integration JUnit cases passed.")
+          print("Verified all eight GUI integration JUnit cases passed.")
           PY
 
       - name: Publish verified native SpriteFrames sample
@@ -423,7 +424,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y xvfb
           fi
-          timeout 60s xvfb-run -a -s "-screen 0 1536x864x24" godot --path . --resolution 1536x864 --windowed --script res://tests/gui_capture.gd 2>&1 | tee "$RUNNER_TEMP/gui-capture.log"
+          timeout 60s xvfb-run -a -s "-screen 0 1536x864x24" godot --path . --resolution 1536x864 --windowed --audio-driver Dummy -- --gui-capture 2>&1 | tee "$RUNNER_TEMP/gui-capture.log"
           grep -Fq 'GUI_CAPTURE_OK 5 actual + 5 comparisons at 1536x864' "$RUNNER_TEMP/gui-capture.log"
           if grep -Eq 'SCRIPT ERROR|Parse Error|ERROR:' "$RUNNER_TEMP"/gui-{import,capture}.log; then
             exit 1

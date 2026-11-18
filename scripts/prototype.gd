@@ -12,6 +12,7 @@ const PlayerController = preload("res://scripts/player.gd")
 const InventoryBridge = preload("res://scripts/inventory_bridge.gd")
 const QuestBridge = preload("res://scripts/quest_bridge.gd")
 const SaveAdapter = preload("res://scripts/save_adapter.gd")
+const GuiCaptureDriver = preload("res://scripts/gui_capture_driver.gd")
 
 @onready var player: PlayerController = $Player
 @onready var status: Label = $HUD/Status
@@ -60,6 +61,11 @@ func _ready() -> void:
 	attack_hit_box.monitoring = false
 	attack_hit_box.ignore_collisions = true
 	_update_inventory_controls()
+	if OS.get_cmdline_user_args().has("--gui-capture"):
+		var capture_driver := GuiCaptureDriver.new()
+		capture_driver.name = "GuiCaptureDriver"
+		capture_driver.process_mode = Node.PROCESS_MODE_ALWAYS
+		add_child.call_deferred(capture_driver)
 
 
 func _unhandled_input(event: InputEvent) -> void:
