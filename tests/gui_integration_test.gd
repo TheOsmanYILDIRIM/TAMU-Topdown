@@ -72,7 +72,7 @@ func test_gui_survival_values_are_drawn_from_live_game_state() -> void:
 	var health_filled := 0
 	var expected_fill := SourceAssets.texture(&"bar_health")
 	for segment: TextureRect in room.mobile_hud._health_segments:
-		if segment.texture == expected_fill:
+		if segment.texture == expected_fill and segment.modulate == Color.WHITE:
 			health_filled += 1
 	assert_int(health_filled).is_equal(3)
 
