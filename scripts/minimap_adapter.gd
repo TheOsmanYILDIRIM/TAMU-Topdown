@@ -22,7 +22,7 @@ func _ready() -> void:
 func _build() -> void:
 	map_core = MiniMapScene.instantiate() as TamuMiniMapCore
 	map_core.name = "Core"
-	map_core.mouse_filter = Control.MOUSE_FILTER_STOP
+	map_core.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(map_core)
 
 	toggle_button = Button.new()
