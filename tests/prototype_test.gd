@@ -1012,10 +1012,201 @@ func _tap_control(room: Prototype, point: Vector2) -> void:
 	await room.get_tree().process_frame
 
 
+func _control_center(control: Control) -> Vector2:
+	var rect := control.get_global_rect()
+	return rect.position + rect.size * 0.5
+
+
+func _drag_control(room: Prototype, start: Vector2, finish: Vector2, touch_index: int = 0) -> void:
+	var press := InputEventScreenTouch.new()
+	press.index = touch_index
+	press.position = start
+	press.pressed = true
+	room.get_viewport().push_input(press, true)
+	await room.get_tree().process_frame
+	var drag := InputEventScreenDrag.new()
+	drag.index = touch_index
+	drag.position = finish
+	drag.relative = finish - start
+	room.get_viewport().push_input(drag, true)
+	await room.get_tree().process_frame
+	var release := InputEventScreenTouch.new()
+	release.index = touch_index
+	release.position = finish
+	release.pressed = false
+	room.get_viewport().push_input(release, true)
+	await room.get_tree().process_frame
+
+
 func _remove_settings_files(path: String) -> void:
 	for candidate: String in [path, path + ".tmp", path + ".bak"]:
 		if FileAccess.file_exists(candidate):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(candidate))
+
+
+
+func test_context_touch_attack_selects_and_uses_existing_attack_window() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.reset_for_test()
+	room.player.position = room.combat_target.position - Vector2(45.0, 0.0)
+	room.player.stop_walking()
+
+	await _tap(room, room.combat_target.position)
+	await tree.process_frame
+	assert_str(String(room.selected)).is_equal("CombatTarget")
+	assert_bool(room.mobile_hud.context_action_button.visible).is_true()
+	assert_str(room.mobile_hud.context_action_button.text).is_equal("Saldır")
+	assert_bool(room.mobile_hud.context_action_button.disabled).is_false()
+
+	await _tap_control(room, room.mobile_hud.context_action_touch_point())
+	assert_bool(room.attack_active).is_true()
+	await _wait_for_attack_end(room, tree)
+	assert_int(room.combat_target.health.current).is_equal(3)
+
+
+func test_context_touch_collect_respects_full_bag_and_collects_when_space_exists() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.set_ai_enabled(false)
+	room.player.position = Prototype.PICKUP - Vector2(40.0, 0.0)
+	room.player.stop_walking()
+	var before := room.inventory.count(room.inventory.bag)
+
+	await _tap(room, Prototype.PICKUP)
+	await tree.process_frame
+	assert_str(room.mobile_hud.context_action_button.text).is_equal("Topla")
+	assert_bool(room.mobile_hud.context_action_button.disabled).is_false()
+	await _tap_control(room, room.mobile_hud.context_action_touch_point())
+	assert_bool(room.pickup_taken).is_true()
+	assert_int(room.inventory.count(room.inventory.bag)).is_equal(before + 1)
+	assert_int(room.quest.progress()).is_equal(1)
+
+	var full_room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	_attach_to_test_viewport(full_room, tree)
+	await tree.process_frame
+	full_room.combat_target.set_ai_enabled(false)
+	full_room.player.position = Prototype.PICKUP - Vector2(40.0, 0.0)
+	full_room.player.stop_walking()
+	_add(full_room.inventory.bag, full_room.inventory.bag_remaining_capacity())
+	await _tap(full_room, Prototype.PICKUP)
+	await tree.process_frame
+	assert_str(full_room.mobile_hud.context_action_button.text).is_equal("Topla")
+	assert_bool(full_room.mobile_hud.context_action_button.disabled).is_true()
+	await _tap_control(full_room, full_room.mobile_hud.context_action_touch_point())
+	assert_bool(full_room.pickup_taken).is_false()
+	assert_int(full_room.quest.progress()).is_equal(0)
+
+
+func test_context_touch_opens_chest_only_when_selected_and_in_range() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.set_ai_enabled(false)
+	room.player.position = Vector2(250.0, 190.0)
+	room.player.stop_walking()
+
+	await _tap(room, Prototype.CHEST)
+	await tree.process_frame
+	assert_str(room.mobile_hud.context_action_button.text).is_equal("Sandığı aç")
+	assert_bool(room.mobile_hud.context_action_button.disabled).is_false()
+	await _tap_control(room, room.mobile_hud.context_action_touch_point())
+	assert_bool(room.mobile_hud.is_chest_screen()).is_true()
+
+	var far_room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	_attach_to_test_viewport(far_room, tree)
+	await tree.process_frame
+	far_room.combat_target.set_ai_enabled(false)
+	far_room.player.position = Vector2(120.0, 194.0)
+	far_room.player.stop_walking()
+	await _tap(far_room, Prototype.CHEST)
+	await tree.process_frame
+	assert_str(far_room.mobile_hud.context_action_button.text).is_equal("Sandığı aç")
+	assert_bool(far_room.mobile_hud.context_action_button.disabled).is_true()
+	await _tap_control(far_room, far_room.mobile_hud.context_action_touch_point())
+	assert_bool(far_room.mobile_hud.bag_open).is_false()
+
+
+func test_context_control_keeps_empty_floor_touch_movement() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.set_ai_enabled(false)
+	room.player.position = Vector2(250.0, 190.0)
+	room.player.stop_walking()
+	await _tap(room, Prototype.CHEST)
+	assert_str(String(room.selected)).is_equal("Chest")
+
+	var target := Vector2(160.0, 280.0)
+	await _tap(room, target)
+	assert_str(String(room.selected)).is_empty()
+	assert_bool(room.mobile_hud.context_action_button.visible).is_false()
+	for frame in range(120):
+		if room.player.position.distance_to(target) < 0.75:
+			break
+		await tree.physics_frame
+	assert_bool(room.player.position.distance_to(target) < 0.75).is_true()
+
+
+func test_audio_sliders_touch_press_drag_release_updates_value_handle_save_and_does_not_leak() -> void:
+	var settings_path := "user://tamu_audio_touch_test.json"
+	_remove_settings_files(settings_path)
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.set_ai_enabled(false)
+	room.player.stop_walking()
+	var start := room.player.position
+	room.mobile_hud.audio_settings.save_file = settings_path
+
+	await _tap_control(room, room.mobile_hud.pause_touch_point())
+	assert_bool(room.mobile_hud.pause_open).is_true()
+	assert_bool(tree.paused).is_true()
+	await _tap_control(room, _control_center(room.mobile_hud.audio_button))
+	assert_bool(room.mobile_hud.audio_open).is_true()
+
+	var expected := {"master": 0.25, "music": 0.5, "sfx": 0.75}
+	for key_value: Variant in expected.keys():
+		var key := String(key_value)
+		var slider := room.mobile_hud.audio_sliders[key] as HSlider
+		var rect := slider.get_global_rect()
+		var press := rect.position + Vector2(rect.size.x * 0.9, rect.size.y * 0.5)
+		var finish := rect.position + Vector2(rect.size.x * float(expected[key]), rect.size.y * 0.5)
+		await _drag_control(room, press, finish, 3)
+		assert_bool(absf(slider.value - float(expected[key])) <= 0.051).is_true()
+		assert_bool(absf(room.mobile_hud.audio_settings.get_level(key) - slider.value) < 0.001).is_true()
+		var handle := room.mobile_hud._audio_handles[key] as TextureRect
+		var holder := handle.get_parent() as Control
+		var usable := maxf(1.0, holder.size.x - handle.size.x)
+		assert_bool(absf(handle.position.x / usable - slider.value) < 0.02).is_true()
+
+	assert_bool(FileAccess.file_exists(settings_path)).is_true()
+	var saved_value: Variant = JSON.parse_string(FileAccess.get_file_as_string(settings_path))
+	assert_bool(saved_value is Dictionary).is_true()
+	var saved := saved_value as Dictionary
+	var audio := saved.get("audio", {}) as Dictionary
+	for key_value: Variant in expected.keys():
+		var key := String(key_value)
+		assert_bool(
+			absf(float(audio.get(key, -1.0)) - room.mobile_hud.audio_settings.get_level(key)) < 0.001
+		).is_true()
+
+	await _tap_control(room, _control_center(room.mobile_hud.audio_button))
+	assert_bool(room.mobile_hud.audio_open).is_false()
+	await _tap_control(room, _control_center(room.mobile_hud.resume_button))
+	assert_bool(tree.paused).is_false()
+	for frame in range(12):
+		await tree.physics_frame
+	assert_bool(room.player.position.distance_to(start) < 0.01).is_true()
+	assert_str(String(room.selected)).is_empty()
+	_remove_settings_files(settings_path)
 
 
 func test_minimap_tracks_player_marker_in_world_coordinates() -> void:

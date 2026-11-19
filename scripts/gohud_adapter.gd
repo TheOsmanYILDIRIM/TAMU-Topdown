@@ -3,6 +3,7 @@ class_name TamuGohudAdapter
 
 signal bag_to_chest_requested
 signal chest_to_bag_requested
+signal context_action_requested
 
 const AudioSettings = preload("res://addons/settings_menus/audio_settings.gd")
 const SourceAssets = preload("res://scripts/tamu_gui_source_assets.gd")
@@ -26,6 +27,7 @@ var audio_open := false
 var hotbar_frame: Control
 var hotbar: GoSlotGrid
 var bag_toggle: TextureButton
+var context_action_button: Button
 var bag_panel: Control
 var bag_grid: GoSlotGrid
 var chest_grid: GoSlotGrid
@@ -44,6 +46,7 @@ var audio_back_button: Button
 var audio_sliders: Dictionary = {}
 var audio_settings: TamuAudioSettings
 var _audio_handles: Dictionary = {}
+var _audio_drag_touch_index: Dictionary = {}
 var _syncing_audio_controls := false
 
 var survival_panel: Control
@@ -78,6 +81,7 @@ func _ready() -> void:
 	audio_settings.load_and_apply()
 	_build_survival_hud()
 	_build_hotbar()
+	_build_context_action()
 	_build_storage_menu()
 	_build_settings_menu()
 	get_viewport().size_changed.connect(_layout)
@@ -232,6 +236,33 @@ func _build_hotbar() -> void:
 	bag_toggle.add_child(bag_icon)
 	bag_toggle.pressed.connect(toggle_bag)
 	add_child(bag_toggle)
+
+func _build_context_action() -> void:
+	context_action_button = _menu_button("")
+	context_action_button.visible = false
+	context_action_button.disabled = true
+	context_action_button.z_index = 5
+	context_action_button.pressed.connect(func() -> void: context_action_requested.emit())
+	add_child(context_action_button)
+
+
+func set_context_action(label: String, enabled: bool, visible: bool = true) -> void:
+	if context_action_button == null:
+		return
+	context_action_button.text = label
+	context_action_button.disabled = not enabled
+	context_action_button.visible = visible
+
+
+func clear_context_action() -> void:
+	set_context_action("", false, false)
+
+
+func context_action_touch_point() -> Vector2:
+	if context_action_button == null:
+		return Vector2.ZERO
+	return context_action_button.position + context_action_button.size * 0.5
+
 
 func _build_storage_menu() -> void:
 	_bag_overlay = ColorRect.new()
@@ -474,12 +505,14 @@ func _add_audio_slider(y: float, text_value: String, bus_key: String) -> void:
 	slider.step = 0.05
 	slider.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	slider.mouse_filter = Control.MOUSE_FILTER_STOP
+	slider.focus_mode = Control.FOCUS_NONE
 	SourceAssets.make_invisible_slider(slider)
 	slider.value_changed.connect(func(value: float) -> void:
 		_sync_slider_visual(bus_key, value)
 		if not _syncing_audio_controls and audio_settings != null:
-			audio_settings.set_level(bus_key, value, true)
+			audio_settings.set_level(bus_key, value, not _audio_drag_touch_index.has(bus_key))
 	)
+	slider.gui_input.connect(_on_audio_slider_gui_input.bind(bus_key, slider))
 	holder.add_child(slider)
 	audio_sliders[bus_key] = slider
 	_audio_handles[bus_key] = handle
@@ -491,6 +524,42 @@ func _sync_slider_visual(bus_key: String, value: float) -> void:
 	var holder := handle.get_parent() as Control
 	var usable := maxf(0.0, holder.size.x - handle.size.x)
 	handle.position.x = usable * clampf(value, 0.0, 1.0)
+
+func _on_audio_slider_gui_input(event: InputEvent, bus_key: String, slider: HSlider) -> void:
+	if event is InputEventScreenTouch:
+		var touch := event as InputEventScreenTouch
+		if touch.pressed:
+			_audio_drag_touch_index[bus_key] = touch.index
+			_set_audio_slider_from_touch(bus_key, slider, touch.position)
+			slider.accept_event()
+		elif int(_audio_drag_touch_index.get(bus_key, -1)) == touch.index:
+			_set_audio_slider_from_touch(bus_key, slider, touch.position)
+			_audio_drag_touch_index.erase(bus_key)
+			if audio_settings != null:
+				audio_settings.set_level(bus_key, slider.value, true)
+			slider.accept_event()
+		return
+	if event is InputEventScreenDrag:
+		var drag := event as InputEventScreenDrag
+		if int(_audio_drag_touch_index.get(bus_key, -1)) != drag.index:
+			return
+		_set_audio_slider_from_touch(bus_key, slider, drag.position)
+		slider.accept_event()
+
+
+func _set_audio_slider_from_touch(bus_key: String, slider: HSlider, event_position: Vector2) -> void:
+	var local_x := event_position.x
+	if local_x < 0.0 or local_x > slider.size.x:
+		local_x = event_position.x - slider.get_global_rect().position.x
+	var width := maxf(1.0, slider.size.x)
+	var ratio := clampf(local_x / width, 0.0, 1.0)
+	var next_value := snappedf(ratio, slider.step)
+	next_value = clampf(next_value, slider.min_value, slider.max_value)
+	slider.set_value_no_signal(next_value)
+	_sync_slider_visual(bus_key, next_value)
+	if audio_settings != null:
+		audio_settings.set_level(bus_key, next_value, false)
+
 
 func open_pause() -> void:
 	if pause_open:
@@ -716,6 +785,11 @@ func _layout() -> void:
 	_hotbar_divider.size = Vector2(2.0, HOTBAR_SLOT_SIZE - 8.0)
 	bag_toggle.position = Vector2(_hotbar_divider.position.x + 9.0, row_y)
 	bag_toggle.size = Vector2(HOTBAR_SLOT_SIZE, HOTBAR_SLOT_SIZE)
+	context_action_button.size = Vector2(minf(112.0, area.size.x - 16.0), 34.0)
+	context_action_button.position = Vector2(
+		area.end.x - context_action_button.size.x - 8.0,
+		maxf(area.position.y + 52.0, row_y - 42.0)
+	)
 	_layout_storage_panel()
 	var pause_height := 212.0 if audio_open else 126.0
 	pause_panel.size = Vector2(minf(272.0, area.size.x - 16.0), minf(pause_height, area.size.y - 12.0))

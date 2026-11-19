@@ -53,6 +53,7 @@ func _ready() -> void:
 	load_button.pressed.connect(_on_load_pressed)
 	mobile_hud.bag_to_chest_requested.connect(_on_bag_to_chest_pressed)
 	mobile_hud.chest_to_bag_requested.connect(_on_chest_to_bag_pressed)
+	mobile_hud.context_action_requested.connect(_on_context_action_requested)
 	mini_map.set_target(player)
 	mobile_hud.bind_survival(player.health, $SurvivalStats as SurvivalStats, $DayNightClock as DayNightClock)
 	attack_hit_box.hurt_box_entered.connect(_on_attack_hurt_box_entered)
@@ -94,7 +95,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func select_at(point: Vector2) -> void:
-	if Rect2(CHEST - Vector2(21.0, 15.0), Vector2(42.0, 30.0)).has_point(point):
+	if (
+		combat_target != null
+		and combat_target.health != null
+		and not combat_target.health.is_dead()
+		and point.distance_to(combat_target.position) <= 16.0
+	):
+		selected = &"CombatTarget"
+	elif Rect2(CHEST - Vector2(21.0, 15.0), Vector2(42.0, 30.0)).has_point(point):
 		selected = &"Chest"
 	elif not pickup_taken and point.distance_to(PICKUP) <= 16.0:
 		selected = &"Pickup"
@@ -137,6 +145,8 @@ func _on_attack_window_timeout() -> void:
 
 
 func _target_for_selected() -> Vector2:
+	if selected == &"CombatTarget" and combat_target != null:
+		return combat_target.position
 	if selected == &"Chest":
 		return CHEST
 	if selected == &"Tree":
@@ -149,6 +159,8 @@ func _target_for_selected() -> Vector2:
 
 
 func _selection_feedback_radius() -> float:
+	if selected == &"CombatTarget":
+		return 18.0
 	if selected == &"Chest":
 		return 27.0
 	if selected == &"Tree":
@@ -185,6 +197,22 @@ func _pickup_reachable() -> bool:
 	if selected == &"Pickup2":
 		return not pickup_two_taken and player.position.distance_to(PICKUP_TWO) <= INTERACTION_DISTANCE
 	return false
+
+
+func _combat_target_available() -> bool:
+	return (
+		selected == &"CombatTarget"
+		and combat_target != null
+		and combat_target.health != null
+		and not combat_target.health.is_dead()
+	)
+
+
+func _combat_target_ui_reachable() -> bool:
+	return (
+		_combat_target_available()
+		and player.position.distance_to(combat_target.position) <= INTERACTION_DISTANCE
+	)
 
 
 func transfer_to_selected_chest(amount: int = 1) -> int:
@@ -269,6 +297,18 @@ func load_game(slot_id: int = 1) -> Dictionary:
 	return result
 
 
+func _on_context_action_requested() -> void:
+	match selected:
+		&"CombatTarget":
+			if _combat_target_ui_reachable():
+				perform_attack()
+		&"Pickup", &"Pickup2":
+			take_selected_pickup()
+		&"Chest":
+			if _chest_reachable():
+				mobile_hud.open_bag()
+
+
 func _on_bag_to_chest_pressed() -> void:
 	transfer_to_selected_chest(1)
 
@@ -303,6 +343,31 @@ func _update_inventory_controls() -> void:
 	reward_button.disabled = not quest.is_completed() or quest.is_reward_claimed()
 	if mobile_hud != null:
 		mobile_hud.sync_inventory(inventory, reachable)
+		_update_context_action()
+
+
+func _update_context_action() -> void:
+	if mobile_hud == null:
+		return
+	match selected:
+		&"CombatTarget":
+			var valid_target := _combat_target_available()
+			mobile_hud.set_context_action(
+				"Saldır",
+				valid_target and _combat_target_ui_reachable(),
+				valid_target
+			)
+		&"Pickup", &"Pickup2":
+			var pickup_exists := (
+				(selected == &"Pickup" and not pickup_taken)
+				or (selected == &"Pickup2" and not pickup_two_taken)
+			)
+			var can_collect := _pickup_reachable() and inventory.bag_remaining_capacity() > 0
+			mobile_hud.set_context_action("Topla", can_collect, pickup_exists)
+		&"Chest":
+			mobile_hud.set_context_action("Sandığı aç", _chest_reachable(), true)
+		_:
+			mobile_hud.clear_context_action()
 
 
 func _update_passive_animal_threat() -> void:

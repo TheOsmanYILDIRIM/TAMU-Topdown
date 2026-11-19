@@ -318,6 +318,11 @@ jobs:
               "test_settings_missing_or_corrupt_file_uses_safe_audio_defaults",
               "test_settings_back_priority_closes_audio_pause_then_bag",
               "test_settings_touch_pause_is_consumed_before_world_input",
+              "test_context_touch_attack_selects_and_uses_existing_attack_window",
+              "test_context_touch_collect_respects_full_bag_and_collects_when_space_exists",
+              "test_context_touch_opens_chest_only_when_selected_and_in_range",
+              "test_context_control_keeps_empty_floor_touch_movement",
+              "test_audio_sliders_touch_press_drag_release_updates_value_handle_save_and_does_not_leak",
               "test_minimap_tracks_player_marker_in_world_coordinates",
               "test_minimap_uses_world_coordinates_under_transformed_parent",
               "test_minimap_hidden_viewport_stops_and_resumes_rendering",
@@ -326,7 +331,7 @@ jobs:
           passed = {case.attrib.get("name") for case in cases if not any(case.find(x) is not None for x in ("failure", "error", "skipped"))}
           if not expected <= passed:
               raise SystemExit(f"Missing passing tests: {expected - passed}; recorded: {passed}")
-          print("Verified all forty-two required JUnit test cases passed.")
+          print("Verified all forty-two preserved plus five Android-touch JUnit test cases passed.")
           PY
           rm -rf reports
           godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests/gui_integration_test.gd --ignoreHeadlessMode 2>&1 | tee "$RUNNER_TEMP/tamu-gui-gdunit.log"
@@ -455,7 +460,7 @@ jobs:
 
 
   android-package:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[android-apk]')) }}
     needs: headless
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -526,7 +531,7 @@ jobs:
       - name: Publish Android debug APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: TAMU-Android-debug
+          name: TAMU-Android-debug-${{ github.sha }}
           path: |
             ${{ runner.temp }}/tamu-apk/TAMU-debug.apk
             ${{ runner.temp }}/tamu-apk/TAMU-debug.apk.sha256
