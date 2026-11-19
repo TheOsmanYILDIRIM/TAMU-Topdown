@@ -35,9 +35,6 @@ func _build() -> void:
 	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel.z_index = 31
 	_overlay.add_child(_panel)
-	var window_art := SourceAssets.nine_patch(&"window_panel")
-	window_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_panel.add_child(window_art)
 	var title_plate := SourceAssets.nine_patch(&"title_plaque")
 	title_plate.position = Vector2(105.0, -8.0)
 	title_plate.size = Vector2(128.0, 36.0)
@@ -169,10 +166,13 @@ func _layout() -> void:
 	_panel.position = area.position + (area.size - panel_size) * 0.5
 	_close_button.position = Vector2(panel_size.x - 34.0, 6.0)
 	_close_button.size = Vector2(28.0, 28.0)
-	_map_frame.position = Vector2(13.0, 35.0)
-	_map_frame.size = Vector2(panel_size.x - 26.0, panel_size.y - 47.0)
-	map_core.position = Vector2(10.0, 10.0)
-	map_core.size = _map_frame.size - Vector2(20.0, 20.0)
+	# map_frame is the only outer map frame.  Do not stack the generic
+	# window_panel behind it: that produced the unwanted second frame on
+	# three sides in the reference-vs-actual captures.
+	_map_frame.position = Vector2.ZERO
+	_map_frame.size = panel_size
+	map_core.position = Vector2(12.0, 12.0)
+	map_core.size = _map_frame.size - Vector2(24.0, 24.0)
 	_north_indicator.position = Vector2(_map_frame.size.x - 42.0, 12.0)
 	_north_indicator.size = Vector2(25.0, 43.0)
 	_player_marker.size = Vector2(24.0, 24.0)

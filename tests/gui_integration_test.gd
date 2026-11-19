@@ -122,3 +122,23 @@ func test_gui_runtime_textures_use_original_component_pngs_not_reference_screens
 	assert_bool(slot.atlas.resource_path.begins_with("res://assets/gui/source/components/")).is_true()
 	assert_bool(not slot.atlas.resource_path.contains("/references/")).is_true()
 	assert_bool(FileAccess.file_exists("res://assets/gui/source/references/126112.png")).is_true()
+
+
+func test_gui_rounded_frames_do_not_slice_through_corners() -> void:
+	for name: StringName in [&"window_panel", &"title_plaque", &"section_plaque", &"map_frame", &"quantity_badge", &"survival_panel", &"wide_button", &"wide_button_active"]:
+		var patch := SourceAssets.nine_patch(name)
+		assert_float(patch.patch_margin_left).is_equal(0.0)
+		assert_float(patch.patch_margin_top).is_equal(0.0)
+		assert_float(patch.patch_margin_right).is_equal(0.0)
+		assert_float(patch.patch_margin_bottom).is_equal(0.0)
+
+func test_map_uses_single_outer_frame() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach(room, tree)
+	await tree.process_frame
+	var frame_count := 0
+	for child: Node in room.mini_map._panel.get_children():
+		if child is NinePatchRect:
+			frame_count += 1
+	assert_int(frame_count).is_equal(2)

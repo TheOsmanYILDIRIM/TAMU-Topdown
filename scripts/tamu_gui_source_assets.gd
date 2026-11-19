@@ -37,14 +37,19 @@ const REGIONS: Dictionary = {
 }
 
 const PATCH_MARGINS: Dictionary = {
-	&"window_panel": Vector4(10.0, 10.0, 10.0, 10.0),
-	&"title_plaque": Vector4(8.0, 6.0, 8.0, 6.0),
-	&"section_plaque": Vector4(8.0, 5.0, 8.0, 5.0),
-	&"map_frame": Vector4(9.0, 9.0, 9.0, 9.0),
-	&"quantity_badge": Vector4(5.0, 4.0, 5.0, 4.0),
-	&"survival_panel": Vector4(8.0, 6.0, 8.0, 6.0),
-	&"wide_button": Vector4(10.0, 6.0, 10.0, 6.0),
-	&"wide_button_active": Vector4(10.0, 6.0, 10.0, 6.0),
+	# Approved GUI crops already contain complete rounded corners.  Small
+	# nine-slice margins cut through those corners and create the visible
+	# seams/kinks seen in the validation captures.  Stretching the complete
+	# crop is intentional here: proportion changes are acceptable, corner
+	# continuity is not.
+	&"window_panel": Vector4.ZERO,
+	&"title_plaque": Vector4.ZERO,
+	&"section_plaque": Vector4.ZERO,
+	&"map_frame": Vector4.ZERO,
+	&"quantity_badge": Vector4.ZERO,
+	&"survival_panel": Vector4.ZERO,
+	&"wide_button": Vector4.ZERO,
+	&"wide_button_active": Vector4.ZERO,
 }
 
 const TEXT_COLOR := Color("#ead7aa")
