@@ -165,7 +165,7 @@ func test_gui_map_title_is_frontmost_and_content_is_centered() -> void:
 	assert_int(room.mini_map._title_plate.z_index).is_greater(room.mini_map._map_frame.z_index)
 	var frame_rect := room.mini_map._map_frame.get_rect()
 	var content_rect := room.mini_map.map_content_rect()
-	var frame_center := frame_rect.position + frame_rect.size * 0.5
+	var frame_center := frame_rect.size * 0.5
 	var content_center := content_rect.position + content_rect.size * 0.5
 	assert_float(content_center.x).is_equal_approx(frame_center.x, 0.01)
 	assert_float(content_center.y).is_equal_approx(frame_center.y, 0.01)
