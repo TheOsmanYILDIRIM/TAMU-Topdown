@@ -179,10 +179,14 @@ func test_gui_chest_visual_layout_is_about_ten_percent_smaller() -> void:
 	room.select_at(Prototype.CHEST)
 	room.mobile_hud.open_bag()
 	await tree.process_frame
-	assert_int(room.mobile_hud.bag_grid.cell_size).is_equal(36)
-	assert_int(room.mobile_hud.chest_grid.cell_size).is_equal(36)
+	assert_int(room.mobile_hud.bag_grid.cell_size).is_equal(40)
+	assert_int(room.mobile_hud.chest_grid.cell_size).is_equal(40)
+	assert_int(room.mobile_hud.bag_grid.get_theme_constant(&"h_separation")).is_equal(0)
+	assert_int(room.mobile_hud.chest_grid.get_theme_constant(&"h_separation")).is_equal(0)
 	assert_bool(room.mobile_hud.bag_panel.size.x <= 442.0).is_true()
 	assert_bool(room.mobile_hud.bag_panel.size.y <= 180.0).is_true()
+	assert_bool(room.mobile_hud.bag_grid.position.y + room.mobile_hud.bag_grid.size.y <= room.mobile_hud.bag_panel.size.y).is_true()
+	assert_bool(room.mobile_hud.chest_grid.position.y + room.mobile_hud.chest_grid.size.y <= room.mobile_hud.bag_panel.size.y).is_true()
 
 func test_gui_survival_segments_use_open_spacing() -> void:
 	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype

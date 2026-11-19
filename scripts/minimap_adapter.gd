@@ -189,7 +189,7 @@ func _layout() -> void:
 	map_core.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	map_core.position = content_margin
 	map_core.size = _map_frame.size - content_margin * 2.0
-	_north_indicator.position = Vector2(_map_frame.size.x - 43.0, 21.0)
+	_north_indicator.position = Vector2(_map_frame.size.x - 43.0, 43.0)
 	_north_indicator.size = Vector2(25.0, 43.0)
 	_player_marker.size = Vector2(24.0, 24.0)
 	_player_marker.position = (_map_frame.size - _player_marker.size) * 0.5

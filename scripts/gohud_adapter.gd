@@ -11,7 +11,6 @@ const DEFAULT_INVENTORY_VISIBLE_SLOTS := 21
 const DEFAULT_CHEST_VISIBLE_SLOTS := 15
 const HOTBAR_SLOT_SIZE := 42
 const MENU_SLOT_SIZE := 40
-const CHEST_SLOT_SIZE := 36
 const SLOT_GAP := 4
 const SURVIVAL_SEGMENTS := 5
 
@@ -377,8 +376,13 @@ func _set_storage_mode(chest_mode: bool) -> void:
 	_storage_title.text = "Chest" if chest_mode else "Inventory"
 	_section_title_plate.visible = chest_mode
 	chest_grid.visible = chest_mode
-	bag_grid.cell_size = CHEST_SLOT_SIZE if chest_mode else MENU_SLOT_SIZE
-	chest_grid.cell_size = CHEST_SLOT_SIZE
+	var visual_gap := 0 if chest_mode else SLOT_GAP
+	bag_grid.cell_size = MENU_SLOT_SIZE
+	chest_grid.cell_size = MENU_SLOT_SIZE
+	bag_grid.add_theme_constant_override(&"h_separation", visual_gap)
+	bag_grid.add_theme_constant_override(&"v_separation", visual_gap)
+	chest_grid.add_theme_constant_override(&"h_separation", 0)
+	chest_grid.add_theme_constant_override(&"v_separation", 0)
 	bag_grid.slot_count = chest_visible_slots if chest_mode else inventory_visible_slots
 	chest_grid.slot_count = chest_visible_slots
 	_layout_storage_panel()
@@ -741,19 +745,20 @@ func _layout_storage_panel() -> void:
 	var grid_height: float
 	var panel_width: float
 	var panel_height: float
-	var slot_size := CHEST_SLOT_SIZE if _storage_chest_mode else MENU_SLOT_SIZE
+	var slot_size := MENU_SLOT_SIZE
+	var grid_gap := 0 if _storage_chest_mode else SLOT_GAP
 	if _storage_chest_mode:
-		columns = mini(5, maxi(1, floori((area.size.x - 54.0 + float(SLOT_GAP) * 2.0) / (2.0 * float(slot_size + SLOT_GAP)))))
+		columns = mini(5, maxi(1, floori((area.size.x - 40.0) / (2.0 * float(slot_size)))))
 		rows = ceili(float(chest_visible_slots) / float(columns))
-		grid_width = float(columns * slot_size + (columns - 1) * SLOT_GAP)
-		grid_height = float(rows * slot_size + (rows - 1) * SLOT_GAP)
-		panel_width = minf(area.size.x - 10.0, grid_width * 2.0 + 48.0)
-		panel_height = minf(area.size.y - 8.0, grid_height + 62.0)
+		grid_width = float(columns * slot_size + (columns - 1) * grid_gap)
+		grid_height = float(rows * slot_size + (rows - 1) * grid_gap)
+		panel_width = minf(area.size.x - 10.0, grid_width * 2.0 + 40.0)
+		panel_height = minf(area.size.y - 8.0, grid_height + 58.0)
 	else:
-		columns = mini(7, maxi(1, floori((area.size.x - 34.0 + float(SLOT_GAP)) / float(slot_size + SLOT_GAP))))
+		columns = mini(7, maxi(1, floori((area.size.x - 34.0 + float(grid_gap)) / float(slot_size + grid_gap))))
 		rows = ceili(float(inventory_visible_slots) / float(columns))
-		grid_width = float(columns * slot_size + (columns - 1) * SLOT_GAP)
-		grid_height = float(rows * slot_size + (rows - 1) * SLOT_GAP)
+		grid_width = float(columns * slot_size + (columns - 1) * grid_gap)
+		grid_height = float(rows * slot_size + (rows - 1) * grid_gap)
 		panel_width = minf(area.size.x - 8.0, grid_width + 34.0)
 		panel_height = minf(area.size.y - 8.0, grid_height + 66.0)
 	bag_panel.size = Vector2(panel_width, panel_height)
@@ -764,11 +769,11 @@ func _layout_storage_panel() -> void:
 	_storage_close_button.position = Vector2(panel_width - 34.0, 6.0)
 	_storage_close_button.size = Vector2(28.0, 28.0)
 	if _storage_chest_mode:
-		bag_grid.position = Vector2(12.0, 45.0)
-		bag_grid.size = Vector2(grid_width, minf(grid_height, panel_height - 50.0))
-		chest_grid.position = Vector2(panel_width - grid_width - 12.0, 45.0)
-		chest_grid.size = Vector2(grid_width, minf(grid_height, panel_height - 50.0))
-		_section_title_plate.position = Vector2(12.0 + (grid_width - 104.0) * 0.5, 22.0)
+		bag_grid.position = Vector2(10.0, 45.0)
+		bag_grid.size = Vector2(grid_width, grid_height)
+		chest_grid.position = Vector2(panel_width - grid_width - 10.0, 45.0)
+		chest_grid.size = Vector2(grid_width, grid_height)
+		_section_title_plate.position = Vector2(10.0 + (grid_width - 104.0) * 0.5, 22.0)
 		_section_title_plate.size = Vector2(104.0, 23.0)
 	else:
 		bag_grid.position = Vector2((panel_width - grid_width) * 0.5, 46.0)
