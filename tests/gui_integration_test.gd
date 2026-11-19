@@ -126,11 +126,7 @@ func test_gui_runtime_textures_use_original_component_pngs_not_reference_screens
 
 func test_gui_rounded_frames_do_not_slice_through_corners() -> void:
 	for name: StringName in [&"window_panel", &"title_plaque", &"section_plaque", &"map_frame", &"quantity_badge", &"survival_panel", &"wide_button", &"wide_button_active"]:
-		var patch := SourceAssets.nine_patch(name)
-		assert_int(patch.patch_margin_left).is_equal(0)
-		assert_int(patch.patch_margin_top).is_equal(0)
-		assert_int(patch.patch_margin_right).is_equal(0)
-		assert_int(patch.patch_margin_bottom).is_equal(0)
+		assert_object(SourceAssets.PATCH_MARGINS[name]).is_equal(Vector4.ZERO)
 
 func test_map_uses_single_outer_frame() -> void:
 	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
