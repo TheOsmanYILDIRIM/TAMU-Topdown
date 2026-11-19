@@ -11,6 +11,7 @@ const DEFAULT_INVENTORY_VISIBLE_SLOTS := 21
 const DEFAULT_CHEST_VISIBLE_SLOTS := 15
 const HOTBAR_SLOT_SIZE := 42
 const MENU_SLOT_SIZE := 40
+const CHEST_SLOT_SIZE := 36
 const SLOT_GAP := 4
 const SURVIVAL_SEGMENTS := 5
 
@@ -102,13 +103,21 @@ func _texture_rect(name: StringName, stretch := TextureRect.STRETCH_KEEP_ASPECT_
 
 func _close_button(callable: Callable) -> TextureButton:
 	var button := TextureButton.new()
-	button.texture_normal = SourceAssets.texture(&"close_icon")
-	button.texture_pressed = button.texture_normal
+	button.texture_normal = SourceAssets.texture(&"square_button")
+	button.texture_pressed = SourceAssets.texture(&"square_button_active")
 	button.texture_hover = button.texture_normal
 	button.ignore_texture_size = true
-	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	button.stretch_mode = TextureButton.STRETCH_SCALE
 	button.focus_mode = Control.FOCUS_NONE
 	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	button.z_index = 6
+	var close_icon := _texture_rect(&"close_icon")
+	close_icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	close_icon.offset_left = 6.0
+	close_icon.offset_top = 6.0
+	close_icon.offset_right = -6.0
+	close_icon.offset_bottom = -6.0
+	button.add_child(close_icon)
 	button.pressed.connect(callable)
 	return button
 
@@ -140,36 +149,36 @@ func _build_survival_hud() -> void:
 	var art := SourceAssets.nine_patch(&"survival_panel")
 	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	survival_panel.add_child(art)
-	var x := 7.0
+	var x := 9.0
 	x = _add_survival_need(x, &"health_icon", &"bar_health", _health_segments)
 	x = _add_survival_need(x, &"hunger_icon", &"bar_hunger", _hunger_segments)
 	x = _add_survival_need(x, &"thirst_icon", &"bar_thirst", _thirst_segments)
 	var day_icon := _texture_rect(&"day_icon")
 	day_icon.position = Vector2(x + 1.0, 8.0)
-	day_icon.size = Vector2(15.0, 17.0)
+	day_icon.size = Vector2(19.0, 18.0)
 	day_icon.modulate = Color("#d4b266")
 	survival_panel.add_child(day_icon)
 	day_label = Label.new()
 	day_label.text = "Day 1"
-	day_label.position = Vector2(x + 15.0, 6.0)
-	day_label.size = Vector2(43.0, 22.0)
+	day_label.position = Vector2(x + 22.0, 6.0)
+	day_label.size = Vector2(52.0, 24.0)
 	day_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	SourceAssets.apply_text(day_label, 9)
 	survival_panel.add_child(day_label)
 
 func _add_survival_need(x: float, icon_name: StringName, fill_name: StringName, row: Array[TextureRect]) -> float:
 	var icon := _texture_rect(icon_name)
-	icon.position = Vector2(x, 8.0)
-	icon.size = Vector2(17.0, 17.0)
+	icon.position = Vector2(x, 7.0)
+	icon.size = Vector2(20.0, 20.0)
 	survival_panel.add_child(icon)
-	var sx := x + 18.0
+	var sx := x + 24.0
 	for index: int in range(SURVIVAL_SEGMENTS):
 		var piece := _texture_rect(fill_name, TextureRect.STRETCH_SCALE)
-		piece.position = Vector2(sx + float(index) * 5.0, 12.0)
-		piece.size = Vector2(4.3, 10.0)
+		piece.position = Vector2(sx + float(index) * 7.2, 12.0)
+		piece.size = Vector2(5.4, 10.0)
 		survival_panel.add_child(piece)
 		row.append(piece)
-	return sx + float(SURVIVAL_SEGMENTS) * 5.0 + 4.0
+	return sx + float(SURVIVAL_SEGMENTS) * 7.2 + 7.0
 
 func bind_survival(health: Health, stats: SurvivalStats, clock: DayNightClock) -> void:
 	_survival_health = health
@@ -240,6 +249,7 @@ func _build_storage_menu() -> void:
 	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bag_panel.add_child(art)
 	_storage_title_plate = SourceAssets.nine_patch(&"title_plaque")
+	_storage_title_plate.z_index = 4
 	bag_panel.add_child(_storage_title_plate)
 	_storage_title = Label.new()
 	_storage_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -249,6 +259,7 @@ func _build_storage_menu() -> void:
 	_storage_close_button = _close_button(close_bag)
 	bag_panel.add_child(_storage_close_button)
 	_section_title_plate = SourceAssets.nine_patch(&"section_plaque")
+	_section_title_plate.z_index = 3
 	bag_panel.add_child(_section_title_plate)
 	var section_title := Label.new()
 	section_title.text = "Inventory"
@@ -261,12 +272,14 @@ func _build_storage_menu() -> void:
 	bag_grid.slot_count = inventory_visible_slots
 	bag_grid.cell_size = MENU_SLOT_SIZE
 	bag_grid.slot_visual_kind = &"inventory"
+	bag_grid.z_index = 1
 	bag_grid.slot_pressed.connect(_on_bag_slot_pressed)
 	bag_panel.add_child(bag_grid)
 	chest_grid = GoSlotGrid.new()
 	chest_grid.slot_count = chest_visible_slots
 	chest_grid.cell_size = MENU_SLOT_SIZE
 	chest_grid.slot_visual_kind = &"inventory"
+	chest_grid.z_index = 1
 	chest_grid.slot_pressed.connect(_on_chest_slot_pressed)
 	bag_panel.add_child(chest_grid)
 	bag_total = Label.new()
@@ -364,6 +377,8 @@ func _set_storage_mode(chest_mode: bool) -> void:
 	_storage_title.text = "Chest" if chest_mode else "Inventory"
 	_section_title_plate.visible = chest_mode
 	chest_grid.visible = chest_mode
+	bag_grid.cell_size = CHEST_SLOT_SIZE if chest_mode else MENU_SLOT_SIZE
+	chest_grid.cell_size = CHEST_SLOT_SIZE
 	bag_grid.slot_count = chest_visible_slots if chest_mode else inventory_visible_slots
 	chest_grid.slot_count = chest_visible_slots
 	_layout_storage_panel()
@@ -391,6 +406,7 @@ func _build_settings_menu() -> void:
 	var title_plate := SourceAssets.nine_patch(&"title_plaque")
 	title_plate.position = Vector2(72.0, -8.0)
 	title_plate.size = Vector2(128.0, 36.0)
+	title_plate.z_index = 4
 	pause_panel.add_child(title_plate)
 	var title := Label.new()
 	title.text = "Paused"
@@ -680,7 +696,7 @@ func _layout() -> void:
 	if area.size.x <= 1.0 or area.size.y <= 1.0:
 		return
 	survival_panel.position = area.position + Vector2(8.0, 8.0)
-	survival_panel.size = Vector2(minf(242.0, area.size.x * 0.58), 34.0)
+	survival_panel.size = Vector2(minf(292.0, area.size.x - 16.0), 36.0)
 	var button_size := Vector2(38.0, 38.0)
 	pause_button.position = Vector2(area.end.x - 2.0 * button_size.x - 14.0, area.position.y + 8.0)
 	pause_button.size = button_size
@@ -725,18 +741,19 @@ func _layout_storage_panel() -> void:
 	var grid_height: float
 	var panel_width: float
 	var panel_height: float
+	var slot_size := CHEST_SLOT_SIZE if _storage_chest_mode else MENU_SLOT_SIZE
 	if _storage_chest_mode:
-		columns = mini(5, maxi(1, floori((area.size.x - 60.0 + float(SLOT_GAP) * 2.0) / (2.0 * float(MENU_SLOT_SIZE + SLOT_GAP)))))
+		columns = mini(5, maxi(1, floori((area.size.x - 54.0 + float(SLOT_GAP) * 2.0) / (2.0 * float(slot_size + SLOT_GAP)))))
 		rows = ceili(float(chest_visible_slots) / float(columns))
-		grid_width = float(columns * MENU_SLOT_SIZE + (columns - 1) * SLOT_GAP)
-		grid_height = float(rows * MENU_SLOT_SIZE + (rows - 1) * SLOT_GAP)
-		panel_width = minf(area.size.x - 10.0, grid_width * 2.0 + 54.0)
-		panel_height = minf(area.size.y - 8.0, grid_height + 68.0)
+		grid_width = float(columns * slot_size + (columns - 1) * SLOT_GAP)
+		grid_height = float(rows * slot_size + (rows - 1) * SLOT_GAP)
+		panel_width = minf(area.size.x - 10.0, grid_width * 2.0 + 48.0)
+		panel_height = minf(area.size.y - 8.0, grid_height + 62.0)
 	else:
-		columns = mini(7, maxi(1, floori((area.size.x - 34.0 + float(SLOT_GAP)) / float(MENU_SLOT_SIZE + SLOT_GAP))))
+		columns = mini(7, maxi(1, floori((area.size.x - 34.0 + float(SLOT_GAP)) / float(slot_size + SLOT_GAP))))
 		rows = ceili(float(inventory_visible_slots) / float(columns))
-		grid_width = float(columns * MENU_SLOT_SIZE + (columns - 1) * SLOT_GAP)
-		grid_height = float(rows * MENU_SLOT_SIZE + (rows - 1) * SLOT_GAP)
+		grid_width = float(columns * slot_size + (columns - 1) * SLOT_GAP)
+		grid_height = float(rows * slot_size + (rows - 1) * SLOT_GAP)
 		panel_width = minf(area.size.x - 8.0, grid_width + 34.0)
 		panel_height = minf(area.size.y - 8.0, grid_height + 66.0)
 	bag_panel.size = Vector2(panel_width, panel_height)
@@ -747,12 +764,12 @@ func _layout_storage_panel() -> void:
 	_storage_close_button.position = Vector2(panel_width - 34.0, 6.0)
 	_storage_close_button.size = Vector2(28.0, 28.0)
 	if _storage_chest_mode:
-		bag_grid.position = Vector2(14.0, 48.0)
-		bag_grid.size = Vector2(grid_width, minf(grid_height, panel_height - 54.0))
-		chest_grid.position = Vector2(panel_width - grid_width - 14.0, 48.0)
-		chest_grid.size = Vector2(grid_width, minf(grid_height, panel_height - 54.0))
-		_section_title_plate.position = Vector2(14.0 + (grid_width - 112.0) * 0.5, 23.0)
-		_section_title_plate.size = Vector2(112.0, 25.0)
+		bag_grid.position = Vector2(12.0, 45.0)
+		bag_grid.size = Vector2(grid_width, minf(grid_height, panel_height - 50.0))
+		chest_grid.position = Vector2(panel_width - grid_width - 12.0, 45.0)
+		chest_grid.size = Vector2(grid_width, minf(grid_height, panel_height - 50.0))
+		_section_title_plate.position = Vector2(12.0 + (grid_width - 104.0) * 0.5, 22.0)
+		_section_title_plate.size = Vector2(104.0, 23.0)
 	else:
 		bag_grid.position = Vector2((panel_width - grid_width) * 0.5, 46.0)
 		bag_grid.size = Vector2(grid_width, minf(grid_height, panel_height - 52.0))

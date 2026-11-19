@@ -138,3 +138,58 @@ func test_map_uses_single_outer_frame() -> void:
 		if child is NinePatchRect:
 			frame_count += 1
 	assert_int(frame_count).is_equal(2)
+
+
+func test_gui_close_controls_use_framed_buttons_above_menu_art() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach(room, tree)
+	await tree.process_frame
+	assert_object(room.mobile_hud._storage_close_button.texture_normal).is_same(SourceAssets.texture(&"square_button"))
+	assert_bool(room.mobile_hud._storage_close_button.get_child_count() > 0).is_true()
+	assert_int(room.mobile_hud._storage_close_button.z_index).is_greater(3)
+	assert_object(room.mobile_hud._pause_close_button.texture_normal).is_same(SourceAssets.texture(&"square_button"))
+	assert_bool(room.mobile_hud._pause_close_button.get_child_count() > 0).is_true()
+	assert_int(room.mobile_hud._pause_close_button.z_index).is_greater(3)
+	assert_object(room.mini_map._close_button.texture_normal).is_same(SourceAssets.texture(&"square_button"))
+	assert_bool(room.mini_map._close_button.get_child_count() > 0).is_true()
+	assert_int(room.mini_map._close_button.z_index).is_greater(room.mini_map._map_frame.z_index)
+
+func test_gui_map_title_is_frontmost_and_content_is_centered() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach(room, tree)
+	await tree.process_frame
+	room.mini_map.set_map_open(true)
+	await tree.process_frame
+	assert_int(room.mini_map._title_plate.z_index).is_greater(room.mini_map._map_frame.z_index)
+	var frame_rect := room.mini_map._map_frame.get_rect()
+	var content_rect := room.mini_map.map_content_rect()
+	var frame_center := frame_rect.position + frame_rect.size * 0.5
+	var content_center := content_rect.position + content_rect.size * 0.5
+	assert_float(content_center.x).is_equal_approx(frame_center.x, 0.01)
+	assert_float(content_center.y).is_equal_approx(frame_center.y, 0.01)
+
+func test_gui_chest_visual_layout_is_about_ten_percent_smaller() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach(room, tree)
+	await tree.process_frame
+	room.player.position = Vector2(250.0, 190.0)
+	room.select_at(Prototype.CHEST)
+	room.mobile_hud.open_bag()
+	await tree.process_frame
+	assert_int(room.mobile_hud.bag_grid.cell_size).is_equal(36)
+	assert_int(room.mobile_hud.chest_grid.cell_size).is_equal(36)
+	assert_bool(room.mobile_hud.bag_panel.size.x <= 442.0).is_true()
+	assert_bool(room.mobile_hud.bag_panel.size.y <= 180.0).is_true()
+
+func test_gui_survival_segments_use_open_spacing() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach(room, tree)
+	await tree.process_frame
+	var first := room.mobile_hud._health_segments[0]
+	var second := room.mobile_hud._health_segments[1]
+	assert_bool(second.position.x - first.position.x >= 7.0).is_true()
+	assert_bool(room.mobile_hud.survival_panel.size.x >= 280.0).is_true()

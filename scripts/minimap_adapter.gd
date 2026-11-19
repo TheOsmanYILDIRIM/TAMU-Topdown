@@ -10,6 +10,7 @@ var map_open := false
 var _overlay: ColorRect
 var _panel: Control
 var _close_button: TextureButton
+var _title_plate: NinePatchRect
 var _map_frame: NinePatchRect
 var _north_indicator: TextureRect
 var _player_marker: TextureRect
@@ -35,29 +36,37 @@ func _build() -> void:
 	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel.z_index = 31
 	_overlay.add_child(_panel)
-	var title_plate := SourceAssets.nine_patch(&"title_plaque")
-	title_plate.position = Vector2(105.0, -8.0)
-	title_plate.size = Vector2(128.0, 36.0)
-	_panel.add_child(title_plate)
+	_map_frame = SourceAssets.nine_patch(&"map_frame")
+	_map_frame.z_index = 1
+	_panel.add_child(_map_frame)
+	_title_plate = SourceAssets.nine_patch(&"title_plaque")
+	_title_plate.z_index = 5
+	_panel.add_child(_title_plate)
 	var title := Label.new()
 	title.text = "Map"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	SourceAssets.apply_text(title, 14)
 	title.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	title_plate.add_child(title)
+	_title_plate.add_child(title)
 	_close_button = TextureButton.new()
-	_close_button.texture_normal = SourceAssets.texture(&"close_icon")
-	_close_button.texture_pressed = _close_button.texture_normal
+	_close_button.texture_normal = SourceAssets.texture(&"square_button")
+	_close_button.texture_pressed = SourceAssets.texture(&"square_button_active")
 	_close_button.texture_hover = _close_button.texture_normal
 	_close_button.ignore_texture_size = true
-	_close_button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	_close_button.stretch_mode = TextureButton.STRETCH_SCALE
 	_close_button.focus_mode = Control.FOCUS_NONE
 	_close_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	_close_button.z_index = 6
+	var close_icon := _icon(&"close_icon")
+	close_icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	close_icon.offset_left = 6.0
+	close_icon.offset_top = 6.0
+	close_icon.offset_right = -6.0
+	close_icon.offset_bottom = -6.0
+	_close_button.add_child(close_icon)
 	_close_button.pressed.connect(func() -> void: set_map_open(false))
 	_panel.add_child(_close_button)
-	_map_frame = SourceAssets.nine_patch(&"map_frame")
-	_panel.add_child(_map_frame)
 	map_core = MiniMapScene.instantiate() as TamuMiniMapCore
 	map_core.name = "Core"
 	map_core.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -68,7 +77,9 @@ func _build() -> void:
 	if map_core.border != null:
 		map_core.border.visible = false
 	_north_indicator = _icon(&"north_indicator")
+	_north_indicator.z_index = 3
 	_player_marker = _icon(&"player_marker")
+	_player_marker.z_index = 3
 	_map_frame.add_child(_north_indicator)
 	_map_frame.add_child(_player_marker)
 	toggle_button = TextureButton.new()
@@ -143,6 +154,9 @@ func toggle_touch_point() -> Vector2:
 func map_panel_rect() -> Rect2:
 	return _panel.get_rect() if _panel != null else Rect2()
 
+func map_content_rect() -> Rect2:
+	return map_core.get_rect() if map_core != null else Rect2()
+
 func _effective_safe_rect() -> Rect2:
 	var area := Rect2(Vector2.ZERO, get_viewport_rect().size)
 	var window := get_window()
@@ -164,16 +178,18 @@ func _layout() -> void:
 	var panel_size := Vector2(minf(338.0, area.size.x - 18.0), minf(218.0, area.size.y - 18.0))
 	_panel.size = panel_size
 	_panel.position = area.position + (area.size - panel_size) * 0.5
-	_close_button.position = Vector2(panel_size.x - 34.0, 6.0)
-	_close_button.size = Vector2(28.0, 28.0)
-	# map_frame is the only outer map frame.  Do not stack the generic
-	# window_panel behind it: that produced the unwanted second frame on
-	# three sides in the reference-vs-actual captures.
-	_map_frame.position = Vector2.ZERO
-	_map_frame.size = panel_size
-	map_core.position = Vector2(12.0, 12.0)
-	map_core.size = _map_frame.size - Vector2(24.0, 24.0)
-	_north_indicator.position = Vector2(_map_frame.size.x - 42.0, 12.0)
+	_title_plate.position = Vector2((panel_size.x - 128.0) * 0.5, -9.0)
+	_title_plate.size = Vector2(128.0, 36.0)
+	_close_button.position = Vector2(panel_size.x - 36.0, 12.0)
+	_close_button.size = Vector2(30.0, 30.0)
+	# Keep one dedicated map frame and place all controls above it.
+	_map_frame.position = Vector2(0.0, 10.0)
+	_map_frame.size = Vector2(panel_size.x, panel_size.y - 10.0)
+	var content_margin := Vector2(18.0, 22.0)
+	map_core.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	map_core.position = content_margin
+	map_core.size = _map_frame.size - content_margin * 2.0
+	_north_indicator.position = Vector2(_map_frame.size.x - 43.0, 21.0)
 	_north_indicator.size = Vector2(25.0, 43.0)
 	_player_marker.size = Vector2(24.0, 24.0)
 	_player_marker.position = (_map_frame.size - _player_marker.size) * 0.5

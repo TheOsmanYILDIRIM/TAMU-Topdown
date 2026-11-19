@@ -349,11 +349,15 @@ jobs:
               "test_gui_runtime_textures_use_original_component_pngs_not_reference_screens",
               "test_gui_rounded_frames_do_not_slice_through_corners",
               "test_map_uses_single_outer_frame",
+              "test_gui_close_controls_use_framed_buttons_above_menu_art",
+              "test_gui_map_title_is_frontmost_and_content_is_centered",
+              "test_gui_chest_visual_layout_is_about_ten_percent_smaller",
+              "test_gui_survival_segments_use_open_spacing",
           }
           passed = {case.attrib.get("name") for case in cases if not any(case.find(x) is not None for x in ("failure", "error", "skipped"))}
           if not expected <= passed:
               raise SystemExit(f"Missing passing GUI tests: {expected - passed}; recorded: {passed}")
-          print("Verified all ten GUI integration JUnit cases passed.")
+          print("Verified all fourteen GUI integration JUnit cases passed.")
           PY
 
       - name: Publish verified native SpriteFrames sample
