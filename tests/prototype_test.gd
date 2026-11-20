@@ -1400,7 +1400,7 @@ func test_invalid_placement_touch_does_not_consume_item_or_move_player() -> void
 		room.inventory.bag, TamuInventoryBridge.WORKBENCH_STABLE_ID
 	)
 	var before_pos := room.player.position
-	await _tap(room, Prototype.ROOM.position + Vector2(2.0, 2.0))
+	await _tap(room, Vector2(40.0, 194.0))
 	assert_bool(room.placement_active).is_true()
 	assert_str(room.placement_status).is_equal("invalid_surface")
 	assert_int(room.inventory.count_item(
