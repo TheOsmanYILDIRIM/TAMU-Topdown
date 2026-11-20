@@ -395,19 +395,25 @@ func schema_button(recipe_id: StringName) -> Button:
 
 
 func craft_touch_point() -> Vector2:
-	return craft_action_button.position + craft_action_button.size * 0.5 if craft_action_button != null else Vector2.ZERO
+	if craft_action_button == null:
+		return Vector2.ZERO
+	var rect := craft_action_button.get_global_rect()
+	return rect.position + rect.size * 0.5
 
 
 func back_touch_point() -> Vector2:
-	return back_button.position + back_button.size * 0.5
+	var rect := back_button.get_global_rect()
+	return rect.position + rect.size * 0.5
 
 
 func placement_rotate_touch_point() -> Vector2:
-	return placement_bar.position + placement_rotate_button.position + placement_rotate_button.size * 0.5
+	var rect := placement_rotate_button.get_global_rect()
+	return rect.position + rect.size * 0.5
 
 
 func placement_cancel_touch_point() -> Vector2:
-	return placement_bar.position + placement_cancel_button.position + placement_cancel_button.size * 0.5
+	var rect := placement_cancel_button.get_global_rect()
+	return rect.position + rect.size * 0.5
 
 
 func _recipe_name(recipe_id: StringName) -> String:
