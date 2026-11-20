@@ -327,11 +327,16 @@ jobs:
               "test_minimap_uses_world_coordinates_under_transformed_parent",
               "test_minimap_hidden_viewport_stops_and_resumes_rendering",
               "test_minimap_toggle_touch_is_consumed_before_world_input",
+              "test_crafting_book_touch_opens_selects_and_crafts_verified_recipes_into_placement",
+              "test_failed_crafting_keeps_rubonnek_inventory_unchanged_when_output_is_full",
+              "test_placement_preview_rotation_and_cancel_preserve_item",
+              "test_invalid_placement_touch_does_not_consume_item_or_move_player",
+              "test_successful_placement_consumes_once_and_restores_floor_movement",
           }
           passed = {case.attrib.get("name") for case in cases if not any(case.find(x) is not None for x in ("failure", "error", "skipped"))}
           if not expected <= passed:
               raise SystemExit(f"Missing passing tests: {expected - passed}; recorded: {passed}")
-          print("Verified all forty-two preserved plus five Android-touch JUnit test cases passed.")
+          print("Verified all forty-two preserved plus five Android-touch plus five crafting/placement JUnit test cases passed.")
           PY
           rm -rf reports
           godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests/gui_integration_test.gd --ignoreHeadlessMode 2>&1 | tee "$RUNNER_TEMP/tamu-gui-gdunit.log"
@@ -436,11 +441,11 @@ jobs:
             sudo apt-get install -y xvfb
           fi
           timeout 60s xvfb-run -a -s "-screen 0 1536x864x24" godot --path . --resolution 1536x864 --windowed --audio-driver Dummy -- --gui-capture 2>&1 | tee "$RUNNER_TEMP/gui-capture.log"
-          grep -Fq 'GUI_CAPTURE_OK 5 actual + 5 comparisons at 1536x864' "$RUNNER_TEMP/gui-capture.log"
+          grep -Fq 'GUI_CAPTURE_OK 7 actual + 5 comparisons at 1536x864' "$RUNNER_TEMP/gui-capture.log"
           if grep -Eq 'SCRIPT ERROR|Parse Error|ERROR:' "$RUNNER_TEMP"/gui-{import,capture}.log; then
             exit 1
           fi
-          test "$(find gui-artifacts/actual -maxdepth 1 -type f -name '*.png' | wc -l)" -eq 5
+          test "$(find gui-artifacts/actual -maxdepth 1 -type f -name '*.png' | wc -l)" -eq 7
           test "$(find gui-artifacts/comparison -maxdepth 1 -type f -name '*.png' | wc -l)" -eq 5
           for f in gui-artifacts/actual/*.png; do
             file "$f" | grep -Fq '1536 x 864'

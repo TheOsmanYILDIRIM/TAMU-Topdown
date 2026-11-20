@@ -13,6 +13,8 @@ const InventoryBridge = preload("res://scripts/inventory_bridge.gd")
 const QuestBridge = preload("res://scripts/quest_bridge.gd")
 const SaveAdapter = preload("res://scripts/save_adapter.gd")
 const GuiCaptureDriver = preload("res://scripts/gui_capture_driver.gd")
+const CraftingAdapter = preload("res://scripts/crafting_adapter.gd")
+const CraftingBookAdapter = preload("res://scripts/crafting_book_adapter.gd")
 
 @onready var player: PlayerController = $Player
 @onready var status: Label = $HUD/Status
@@ -36,10 +38,20 @@ var quest: TamuQuestBridge
 var pickup_taken: bool = false
 var pickup_two_taken: bool = false
 var attack_active: bool = false
+var crafting: TamuCraftingAdapter
+var crafting_book: TamuCraftingBookAdapter
+var craft_command_sequence := 0
+var placement_active := false
+var placement_def_id: StringName = &""
+var placement_position := Vector2.ZERO
+var placement_rotation := 0
+var placement_status := ""
+var placed_structures: Array[Dictionary] = []
 
 
 func _ready() -> void:
 	inventory = InventoryBridge.new(4, 4)
+	crafting = CraftingAdapter.new(inventory)
 	quest = QuestBridge.new()
 	var seed_excess: ExcessItems = inventory.bag.add(
 		InventoryBridge.WOOD_LOG_PLUGIN_ID, 12, null, -1, false
@@ -54,6 +66,14 @@ func _ready() -> void:
 	mobile_hud.bag_to_chest_requested.connect(_on_bag_to_chest_pressed)
 	mobile_hud.chest_to_bag_requested.connect(_on_chest_to_bag_pressed)
 	mobile_hud.context_action_requested.connect(_on_context_action_requested)
+	mobile_hud.craft_book_requested.connect(open_crafting_book)
+	crafting_book = CraftingBookAdapter.new()
+	crafting_book.name = "CraftingBook"
+	crafting_book.setup(inventory, crafting)
+	$HUD.add_child(crafting_book)
+	crafting_book.craft_requested.connect(_on_craft_requested)
+	crafting_book.placement_rotate_requested.connect(rotate_placement)
+	crafting_book.placement_cancel_requested.connect(cancel_placement)
 	mini_map.set_target(player)
 	mobile_hud.bind_survival(player.health, $SurvivalStats as SurvivalStats, $DayNightClock as DayNightClock)
 	attack_hit_box.hurt_box_entered.connect(_on_attack_hurt_box_entered)
@@ -70,6 +90,9 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if crafting_book != null and crafting_book.handle_back_event(event):
+		get_viewport().set_input_as_handled()
+		return
 	if mini_map != null and mini_map.handle_back_event(event):
 		get_viewport().set_input_as_handled()
 		return
@@ -78,6 +101,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SPACE:
 		perform_attack()
+		get_viewport().set_input_as_handled()
+		return
+
+	if placement_active:
+		var placement_point: Vector2
+		if event is InputEventScreenTouch and event.pressed:
+			placement_point = event.position
+		elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			placement_point = event.position
+		else:
+			return
+		var placement_local := get_global_transform_with_canvas().affine_inverse() * placement_point
+		try_place_at(placement_local)
 		get_viewport().set_input_as_handled()
 		return
 
@@ -291,10 +327,159 @@ func load_game(slot_id: int = 1) -> Dictionary:
 	pickup_taken = bool(decoded.get("pickup_taken", pickup_taken))
 	pickup_two_taken = bool(decoded.get("pickup_two_taken", pickup_two_taken))
 	selected = &""
+	cancel_placement()
+	placed_structures.clear()
 	_update_inventory_controls()
 	_sync_interaction_feedback(false)
 	queue_redraw()
 	return result
+
+
+func open_crafting_book() -> void:
+	if mobile_hud.bag_open:
+		mobile_hud.close_bag()
+	if mobile_hud.pause_open or placement_active:
+		return
+	crafting_book.open_book()
+
+
+func _on_craft_requested(recipe_id: StringName) -> void:
+	craft_command_sequence += 1
+	var result := crafting.begin(
+		"topdown-craft-%d" % craft_command_sequence,
+		recipe_id,
+		_station_tags_near_player()
+	)
+	crafting_book.notify_craft_result(result)
+	_update_inventory_controls()
+
+
+func _station_tags_near_player() -> Array:
+	var tags: Array = []
+	for placed: Dictionary in placed_structures:
+		if StringName(placed.get("def_id", "")) != InventoryBridge.WORKBENCH_STABLE_ID:
+			continue
+		var box: Rect2 = placed.get("box", Rect2())
+		var nearest := Vector2(
+			clampf(player.position.x, box.position.x, box.end.x),
+			clampf(player.position.y, box.position.y, box.end.y)
+		)
+		if player.position.distance_to(nearest) <= 60.0:
+			tags.append(&"core:bench")
+			break
+	return tags
+
+
+func start_placement(def_id: StringName) -> Dictionary:
+	if def_id != InventoryBridge.WORKBENCH_STABLE_ID:
+		return {"ok": false, "status": "not_placeable"}
+	placement_active = true
+	placement_def_id = def_id
+	placement_rotation = 0
+	placement_position = player.position + Vector2(48.0, 0.0)
+	var preview := preview_placement(placement_position, placement_rotation)
+	placement_status = str(preview.get("status", "invalid_surface"))
+	crafting_book.set_placement_mode(true, placement_status, placement_rotation)
+	queue_redraw()
+	return preview
+
+
+func cancel_placement() -> void:
+	if not placement_active:
+		return
+	placement_active = false
+	placement_def_id = &""
+	placement_status = ""
+	if crafting_book != null:
+		crafting_book.set_placement_mode(false)
+	queue_redraw()
+
+
+func rotate_placement() -> void:
+	if not placement_active:
+		return
+	placement_rotation = (placement_rotation + 1) % 4
+	var preview := preview_placement(placement_position, placement_rotation)
+	placement_status = str(preview.get("status", "invalid_rotation"))
+	crafting_book.update_placement_status(placement_status, placement_rotation)
+	queue_redraw()
+
+
+func preview_placement(at: Vector2, rotation: int) -> Dictionary:
+	if placement_def_id != InventoryBridge.WORKBENCH_STABLE_ID:
+		return {"ok": false, "status": "not_placeable"}
+	if rotation < 0 or rotation >= 4:
+		return {"ok": false, "status": "invalid_rotation"}
+	if at.distance_squared_to(player.position) > 96.0 * 96.0:
+		return {"ok": false, "status": "out_of_range"}
+	var box := Rect2(at - Vector2(16.0, 16.0), Vector2(32.0, 32.0))
+	if not ROOM.has_point(box.position) or not ROOM.has_point(box.end - Vector2(0.01, 0.01)):
+		return {"ok": false, "status": "invalid_surface", "box": box}
+	var player_box := Rect2(player.position - Vector2(5.0, 5.0), Vector2(10.0, 10.0))
+	if box.intersects(player_box, true):
+		return {"ok": false, "status": "player_overlap", "box": box}
+	var obstacles: Array = [
+		Rect2(CHEST - Vector2(21.0, 15.0), Vector2(42.0, 30.0)),
+		Rect2(TREE - Vector2(23.0, 23.0), Vector2(46.0, 46.0)),
+	]
+	if combat_target != null and combat_target.health != null and not combat_target.health.is_dead():
+		obstacles.append(Rect2(combat_target.position - Vector2(12.0, 12.0), Vector2(24.0, 24.0)))
+	for placed: Dictionary in placed_structures:
+		obstacles.append(placed.get("box", Rect2()))
+	for obstacle_value: Variant in obstacles:
+		var obstacle: Rect2 = obstacle_value
+		if box.intersects(obstacle, true):
+			return {"ok": false, "status": "obstructed", "box": box}
+	if inventory.count_item(inventory.bag, InventoryBridge.WORKBENCH_STABLE_ID) < 1:
+		return {"ok": false, "status": "insufficient_materials", "box": box}
+	return {"ok": true, "status": "valid", "box": box}
+
+
+func try_place_at(at: Vector2) -> Dictionary:
+	if not placement_active:
+		return {"ok": false, "status": "inactive"}
+	placement_position = at
+	var preview := preview_placement(at, placement_rotation)
+	placement_status = str(preview.get("status", "invalid_surface"))
+	crafting_book.update_placement_status(placement_status, placement_rotation)
+	if not bool(preview.get("ok", false)):
+		queue_redraw()
+		return preview
+	if inventory.remove_item_from_bag_atomic(InventoryBridge.WORKBENCH_STABLE_ID, 1) != 1:
+		placement_status = "insufficient_materials"
+		crafting_book.update_placement_status(placement_status, placement_rotation)
+		queue_redraw()
+		return {"ok": false, "status": placement_status}
+	var instance_id := _new_uuid_v4()
+	placed_structures.append({
+		"id": instance_id,
+		"def_id": String(InventoryBridge.WORKBENCH_STABLE_ID),
+		"box": preview["box"],
+		"rotation": placement_rotation,
+		"owner_id": "topdown:player",
+	})
+	placement_active = false
+	placement_def_id = &""
+	crafting_book.set_placement_mode(false)
+	_update_inventory_controls()
+	queue_redraw()
+	return {"ok": true, "status": "placed", "instance_id": instance_id}
+
+
+func _new_uuid_v4() -> String:
+	var bytes := Crypto.new().generate_random_bytes(16)
+	bytes[6] = (bytes[6] & 0x0f) | 0x40
+	bytes[8] = (bytes[8] & 0x3f) | 0x80
+	var hex := ""
+	for value in bytes:
+		hex += "%02x" % int(value)
+	return "%s-%s-%s-%s-%s" % [
+		hex.substr(0, 8),
+		hex.substr(8, 4),
+		hex.substr(12, 4),
+		hex.substr(16, 4),
+		hex.substr(20, 12),
+	]
 
 
 func _on_context_action_requested() -> void:
@@ -380,6 +565,16 @@ func _update_passive_animal_threat() -> void:
 
 
 func _process(_delta: float) -> void:
+	var craft_result := crafting.tick(_delta, _station_tags_near_player())
+	if not craft_result.is_empty():
+		crafting_book.notify_craft_result(craft_result)
+		_update_inventory_controls()
+		if bool(craft_result.get("ok", false)):
+			for output_value: Variant in craft_result.get("outputs", []):
+				var output := output_value as Dictionary
+				if StringName(output.get("def_id", "")) == InventoryBridge.WORKBENCH_STABLE_ID:
+					start_placement(InventoryBridge.WORKBENCH_STABLE_ID)
+					break
 	_update_passive_animal_threat()
 	_sync_interaction_feedback(false)
 	var label := "TAMU • Quest %d/%d" % [quest.progress(), quest.target()]
@@ -407,3 +602,17 @@ func _draw() -> void:
 		draw_circle(PICKUP, 11.0, Color("#c99a58"), true, -1.0, true)
 	if not pickup_two_taken:
 		draw_circle(PICKUP_TWO, 11.0, Color("#c99a58"), true, -1.0, true)
+	for placed: Dictionary in placed_structures:
+		var placed_box: Rect2 = placed.get("box", Rect2())
+		draw_rect(placed_box, Color("#8f6848"), true)
+		draw_rect(placed_box, Color("#d0ad78"), false, 2.0)
+	if placement_active:
+		var preview := preview_placement(placement_position, placement_rotation)
+		var box: Rect2 = preview.get(
+			"box",
+			Rect2(placement_position - Vector2(16.0, 16.0), Vector2(32.0, 32.0))
+		)
+		var fill := Color(0.35, 0.72, 0.48, 0.32) if bool(preview.get("ok", false)) else Color(0.78, 0.28, 0.22, 0.32)
+		var edge := Color("#8fd39a") if bool(preview.get("ok", false)) else Color("#df7768")
+		draw_rect(box, fill, true)
+		draw_rect(box, edge, false, 2.0)

@@ -57,10 +57,30 @@ func _capture_sequence() -> void:
 		return
 	room.mini_map.set_map_open(false)
 
-	print("GUI_CAPTURE_OK 5 actual + 5 comparisons at 1536x864")
+	room.open_crafting_book()
+	for _frame: int in range(4):
+		await get_tree().process_frame
+	print("GUI_CAPTURE crafting-book")
+	if not await _capture_actual("crafting-book"):
+		return
+	room.crafting_book.close_book()
+
+	if room.inventory.add_item_to_bag_atomic(TamuInventoryBridge.WORKBENCH_STABLE_ID, 1) != 1:
+		_fail(9, "Could not seed workbench for placement capture")
+		return
+	room.player.position = Vector2(120.0, 194.0)
+	room.start_placement(TamuInventoryBridge.WORKBENCH_STABLE_ID)
+	for _frame: int in range(4):
+		await get_tree().process_frame
+	print("GUI_CAPTURE placement-preview")
+	if not await _capture_actual("placement-preview"):
+		return
+	room.cancel_placement()
+
+	print("GUI_CAPTURE_OK 7 actual + 5 comparisons at 1536x864")
 	get_tree().quit(0)
 
-func _capture(name: String, reference_name: String) -> bool:
+func _capture_actual(name: String) -> bool:
 	RenderingServer.force_draw(false)
 	await get_tree().process_frame
 	RenderingServer.force_draw(false)
@@ -73,13 +93,19 @@ func _capture(name: String, reference_name: String) -> bool:
 	var err := actual.save_png(actual_path)
 	if err != OK:
 		return _fail(4, "Could not save actual capture %s: %s" % [name, error_string(err)])
+	return true
 
+func _capture(name: String, reference_name: String) -> bool:
+	if not await _capture_actual(name):
+		return false
+	var actual := _load_reference(ACTUAL_ROOT + "/" + name + ".png")
+	if actual == null or actual.is_empty():
+		return _fail(4, "Could not reload actual capture %s" % name)
 	var reference := _load_reference(REFERENCE_ROOT + reference_name)
 	if reference == null or reference.is_empty():
 		return _fail(5, "Could not load GUI reference %s" % reference_name)
 	if reference.get_width() != TARGET_SIZE.x or reference.get_height() < TARGET_SIZE.y:
 		return _fail(6, "Unexpected reference dimensions for %s: %s" % [reference_name, reference.get_size()])
-
 	var reference_frame := reference.get_region(Rect2i(Vector2i.ZERO, TARGET_SIZE))
 	if reference_frame.get_format() != Image.FORMAT_RGBA8:
 		reference_frame.convert(Image.FORMAT_RGBA8)
@@ -91,7 +117,7 @@ func _capture(name: String, reference_name: String) -> bool:
 	comparison.blit_rect(reference_frame, Rect2i(Vector2i.ZERO, TARGET_SIZE), Vector2i.ZERO)
 	comparison.blit_rect(actual_rgba, Rect2i(Vector2i.ZERO, TARGET_SIZE), Vector2i(TARGET_SIZE.x, 0))
 	var compare_path := "%s/%s-reference-left_actual-right.png" % [COMPARE_ROOT, name]
-	err = comparison.save_png(compare_path)
+	var err := comparison.save_png(compare_path)
 	if err != OK:
 		return _fail(7, "Could not save comparison %s: %s" % [name, error_string(err)])
 	return true

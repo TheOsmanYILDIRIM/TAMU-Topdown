@@ -1278,3 +1278,161 @@ func test_minimap_toggle_touch_is_consumed_before_world_input() -> void:
 	assert_bool(room.mini_map.map_open).is_true()
 	assert_bool(room.player.position.distance_to(start) < 0.01).is_true()
 	assert_str(String(room.selected)).is_empty()
+
+
+
+func _wait_for_craft(room: Prototype, tree: SceneTree) -> void:
+	for frame: int in range(180):
+		if not room.crafting.is_active():
+			return
+		await tree.process_frame
+	assert_bool(room.crafting.is_active()).is_false()
+
+
+func test_crafting_book_touch_opens_selects_and_crafts_verified_recipes_into_placement() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.set_ai_enabled(false)
+
+	await _tap_control(room, room.mobile_hud.craft_touch_point())
+	assert_bool(room.crafting_book.is_open()).is_true()
+	assert_str(room.crafting_book.current_page).is_equal("library")
+
+	var plank_button := room.crafting_book.schema_button(&"core:planks_from_log")
+	assert_bool(plank_button != null).is_true()
+	await _tap_control(room, _control_center(plank_button))
+	assert_str(room.crafting_book.current_page).is_equal("recipe")
+	assert_str(String(room.crafting_book.active_recipe)).is_equal("core:planks_from_log")
+
+	var wood_before := room.inventory.count_item(
+		room.inventory.bag, TamuInventoryBridge.WOOD_LOG_STABLE_ID
+	)
+	await _tap_control(room, room.crafting_book.craft_touch_point())
+	assert_bool(room.crafting.is_active()).is_true()
+	await _wait_for_craft(room, tree)
+	assert_int(room.inventory.count_item(
+		room.inventory.bag, TamuInventoryBridge.WOOD_LOG_STABLE_ID
+	)).is_equal(wood_before - 1)
+	assert_int(room.inventory.count_item(
+		room.inventory.bag, TamuInventoryBridge.WOOD_PLANK_STABLE_ID
+	)).is_equal(4)
+
+	await _tap_control(room, room.crafting_book.back_touch_point())
+	var bench_button := room.crafting_book.schema_button(&"core:bench_from_planks")
+	assert_bool(bench_button != null).is_true()
+	await _tap_control(room, _control_center(bench_button))
+	await _tap_control(room, room.crafting_book.craft_touch_point())
+	await _wait_for_craft(room, tree)
+	await tree.process_frame
+	assert_bool(room.placement_active).is_true()
+	assert_str(room.placement_status).is_equal("valid")
+	assert_int(room.inventory.count_item(
+		room.inventory.bag, TamuInventoryBridge.WORKBENCH_STABLE_ID
+	)).is_equal(1)
+	assert_bool(room.crafting_book.is_open()).is_false()
+
+
+func test_failed_crafting_keeps_rubonnek_inventory_unchanged_when_output_is_full() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	var wood := room.inventory.count_item(
+		room.inventory.bag, TamuInventoryBridge.WOOD_LOG_STABLE_ID
+	)
+	assert_int(room.inventory.remove_item_from_bag_atomic(
+		TamuInventoryBridge.WOOD_LOG_STABLE_ID, wood
+	)).is_equal(wood)
+	assert_int(room.inventory.add_item_to_bag_atomic(
+		TamuInventoryBridge.WOOD_PLANK_STABLE_ID, 8
+	)).is_equal(8)
+	for index: int in range(3):
+		assert_int(room.inventory.add_item_to_bag_atomic(
+			TamuInventoryBridge.WORKBENCH_STABLE_ID, 1
+		)).is_equal(1)
+
+	var before := JSON.stringify(room.inventory.snapshot_all())
+	var result := room.crafting.begin("full-output", &"core:bench_from_planks", [])
+	assert_bool(bool(result.get("ok", false))).is_false()
+	assert_str(str(result.get("status", ""))).is_equal("inventory_full")
+	assert_str(JSON.stringify(room.inventory.snapshot_all())).is_equal(before)
+
+
+func test_placement_preview_rotation_and_cancel_preserve_item() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	assert_int(room.inventory.add_item_to_bag_atomic(
+		TamuInventoryBridge.WORKBENCH_STABLE_ID, 1
+	)).is_equal(1)
+	var before := room.inventory.count_item(
+		room.inventory.bag, TamuInventoryBridge.WORKBENCH_STABLE_ID
+	)
+	var preview := room.start_placement(TamuInventoryBridge.WORKBENCH_STABLE_ID)
+	assert_bool(bool(preview.get("ok", false))).is_true()
+	assert_bool(room.placement_active).is_true()
+	await _tap_control(room, room.crafting_book.placement_rotate_touch_point())
+	assert_int(room.placement_rotation).is_equal(1)
+	assert_bool(room.placement_active).is_true()
+	await _tap_control(room, room.crafting_book.placement_cancel_touch_point())
+	assert_bool(room.placement_active).is_false()
+	assert_int(room.inventory.count_item(
+		room.inventory.bag, TamuInventoryBridge.WORKBENCH_STABLE_ID
+	)).is_equal(before)
+
+
+func test_invalid_placement_touch_does_not_consume_item_or_move_player() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+
+	assert_int(room.inventory.add_item_to_bag_atomic(
+		TamuInventoryBridge.WORKBENCH_STABLE_ID, 1
+	)).is_equal(1)
+	room.start_placement(TamuInventoryBridge.WORKBENCH_STABLE_ID)
+	var before_item := room.inventory.count_item(
+		room.inventory.bag, TamuInventoryBridge.WORKBENCH_STABLE_ID
+	)
+	var before_pos := room.player.position
+	await _tap(room, Prototype.ROOM.position + Vector2(2.0, 2.0))
+	assert_bool(room.placement_active).is_true()
+	assert_str(room.placement_status).is_equal("invalid_surface")
+	assert_int(room.inventory.count_item(
+		room.inventory.bag, TamuInventoryBridge.WORKBENCH_STABLE_ID
+	)).is_equal(before_item)
+	assert_bool(room.player.position.distance_to(before_pos) < 0.01).is_true()
+
+
+func test_successful_placement_consumes_once_and_restores_floor_movement() -> void:
+	var room: Prototype = auto_free(PROTOTYPE.instantiate()) as Prototype
+	var tree := Engine.get_main_loop() as SceneTree
+	_attach_to_test_viewport(room, tree)
+	await tree.process_frame
+	room.combat_target.set_ai_enabled(false)
+
+	assert_int(room.inventory.add_item_to_bag_atomic(
+		TamuInventoryBridge.WORKBENCH_STABLE_ID, 1
+	)).is_equal(1)
+	room.start_placement(TamuInventoryBridge.WORKBENCH_STABLE_ID)
+	var before_pos := room.player.position
+	await _tap(room, Vector2(150.0, 260.0))
+	assert_bool(room.placement_active).is_false()
+	assert_int(room.placed_structures.size()).is_equal(1)
+	assert_int(room.inventory.count_item(
+		room.inventory.bag, TamuInventoryBridge.WORKBENCH_STABLE_ID
+	)).is_equal(0)
+	assert_bool(room.player.position.distance_to(before_pos) < 0.01).is_true()
+
+	var floor_target := Vector2(90.0, 110.0)
+	await _tap(room, floor_target)
+	for frame: int in range(180):
+		if room.player.position.distance_to(floor_target) < 0.75:
+			break
+		await tree.physics_frame
+	assert_bool(room.player.position.distance_to(floor_target) < 0.75).is_true()

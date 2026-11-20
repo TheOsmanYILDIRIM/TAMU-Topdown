@@ -4,6 +4,7 @@ class_name TamuGohudAdapter
 signal bag_to_chest_requested
 signal chest_to_bag_requested
 signal context_action_requested
+signal craft_book_requested
 
 const AudioSettings = preload("res://addons/settings_menus/audio_settings.gd")
 const SourceAssets = preload("res://scripts/tamu_gui_source_assets.gd")
@@ -28,6 +29,7 @@ var hotbar_frame: Control
 var hotbar: GoSlotGrid
 var bag_toggle: TextureButton
 var context_action_button: Button
+var craft_button: Button
 var bag_panel: Control
 var bag_grid: GoSlotGrid
 var chest_grid: GoSlotGrid
@@ -236,6 +238,11 @@ func _build_hotbar() -> void:
 	bag_toggle.add_child(bag_icon)
 	bag_toggle.pressed.connect(toggle_bag)
 	add_child(bag_toggle)
+	craft_button = _menu_button("Üretim")
+	craft_button.tooltip_text = "Üretim kitabı"
+	craft_button.accessibility_name = "Üretim kitabı"
+	craft_button.pressed.connect(func() -> void: craft_book_requested.emit())
+	add_child(craft_button)
 
 func _build_context_action() -> void:
 	context_action_button = _menu_button("")
@@ -349,8 +356,8 @@ func sync_inventory(value: TamuInventoryBridge, selected_chest_reachable: bool) 
 	_draw_storage(hotbar, inventory.bag)
 	_draw_storage(bag_grid, inventory.bag)
 	_draw_storage(chest_grid, inventory.chest)
-	var bag_count := inventory.count(inventory.bag)
-	var chest_count := inventory.count(inventory.chest)
+	var bag_count := inventory.total_count(inventory.bag)
+	var chest_count := inventory.total_count(inventory.chest)
 	bag_total.text = str(bag_count)
 	chest_total.text = str(chest_count)
 	bag_to_chest_button.disabled = not chest_reachable or bag_count <= 0
@@ -367,7 +374,14 @@ func _draw_storage(grid: GoSlotGrid, storage: InventoryManager) -> void:
 		if amount <= 0:
 			grid.set_cell(index, {})
 		else:
-			grid.set_cell(index, {"caption": "Wood", "quantity": amount, "tooltip": "Wood log ×%d" % amount})
+			var plugin_id := storage.get_slot_item_id(index)
+			var stable_id := inventory.stable_id_for_plugin_id(plugin_id)
+			var caption := inventory.item_display_name(stable_id)
+			grid.set_cell(index, {
+				"caption": caption,
+				"quantity": amount,
+				"tooltip": "%s ×%d" % [caption, amount],
+			})
 
 func _on_bag_slot_pressed(index: int) -> void:
 	if _storage_chest_mode and chest_reachable and inventory != null and index < inventory.bag.size() and inventory.bag.get_slot_item_amount(index) > 0:
@@ -728,6 +742,10 @@ func hotbar_touch_point() -> Vector2:
 	var first := hotbar.slot(0)
 	return hotbar_frame.position + hotbar.position + first.position + first.size * 0.5 if first != null else hotbar_frame.position + hotbar_frame.size * 0.5
 
+func craft_touch_point() -> Vector2:
+	return craft_button.position + craft_button.size * 0.5
+
+
 func pause_touch_point() -> Vector2:
 	return pause_button.position + pause_button.size * 0.5
 
@@ -785,6 +803,12 @@ func _layout() -> void:
 	_hotbar_divider.size = Vector2(2.0, HOTBAR_SLOT_SIZE - 8.0)
 	bag_toggle.position = Vector2(_hotbar_divider.position.x + 9.0, row_y)
 	bag_toggle.size = Vector2(HOTBAR_SLOT_SIZE, HOTBAR_SLOT_SIZE)
+	craft_button.size = Vector2(72.0, 32.0)
+	var craft_x := row_x - craft_button.size.x - 8.0
+	if craft_x >= area.position.x + 8.0:
+		craft_button.position = Vector2(craft_x, row_y + 5.0)
+	else:
+		craft_button.position = Vector2(row_x, row_y - 36.0)
 	context_action_button.size = Vector2(minf(112.0, area.size.x - 16.0), 34.0)
 	context_action_button.position = Vector2(
 		area.end.x - context_action_button.size.x - 8.0,
