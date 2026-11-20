@@ -378,7 +378,7 @@ func set_placement_mode(active: bool, status: String = "", rotation: int = 0) ->
 func update_placement_status(status: String, rotation: int) -> void:
 	if placement_status_label == null:
 		return
-	var readable := {
+	var readable: String = str({
 		"valid": "Geçerli",
 		"invalid_surface": "Geçersiz zemin",
 		"out_of_range": "Menzil dışı",
@@ -386,7 +386,7 @@ func update_placement_status(status: String, rotation: int) -> void:
 		"obstructed": "Alan dolu",
 		"insufficient_materials": "Tezgâh çantada yok",
 		"invalid_rotation": "Geçersiz dönüş",
-	}.get(status, status)
+	}.get(status, status))
 	placement_status_label.text = "TEZGÂH • %s • %d° • Dünyaya dokun: yerleştir" % [readable, rotation * 90]
 
 
